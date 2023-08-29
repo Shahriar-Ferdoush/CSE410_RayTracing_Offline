@@ -113,3 +113,103 @@ class Color
             this->b = b;
         }
 };
+
+// Point Light
+class Light
+{
+    public:
+        Point pos;
+        Color color;
+
+        Light() {
+            pos = Point(0, 0, 0);
+            color = Color(255, 255, 255);
+        }
+
+        Light(Point pos, Color color) : pos(pos), color(color) {}
+
+        void draw() {
+            glPushMatrix();
+                glTranslatef(pos.x, pos.y, pos.z);
+                glColor3f(color.r / 255.0, color.g / 255.0, color.b / 255.0);
+                glutSolidSphere(0.1, 10, 10);
+            glPopMatrix();
+            glEnd();
+        }
+
+        // Input with operator >>
+        friend istream& operator>>(istream& is, Light& l) {
+            is >> l.pos >> l.color.r >> l.color.g >> l.color.b;
+            return is;
+        }
+};
+
+
+// Spot Light
+class SpotLight
+{
+    public:
+        Light light;
+        Point lookAt;
+        double angle;
+
+        SpotLight() {
+            light = Light();
+            lookAt = Point(0, 0, 0);
+            angle = 0;
+        }
+
+        void draw() {
+            light.draw();
+            glBegin(GL_LINES);
+                glVertex3f(light.pos.x, light.pos.y, light.pos.z);
+                glVertex3f(lookAt.x, lookAt.y, lookAt.z);
+            glEnd();
+        }
+
+        // Input with operator >>
+        friend istream& operator>>(istream& is, SpotLight& sl) {
+            is >> sl.light >> sl.lookAt >> sl.angle;
+            return is;
+        }
+};
+
+// Ray
+class Ray
+{
+    public:
+        Point start, dir;
+
+        Ray() {
+            start = Point(0, 0, 0);
+            dir = Point(0, 0, 0);
+        }
+
+        Ray(Point start, Point dir) {
+            this->start = start;
+
+            // Normalize direction
+            dir.normalize();
+            this->dir = dir;
+        }
+
+        void draw() {
+            glBegin(GL_LINES);
+                glVertex3f(start.x, start.y, start.z);
+                glVertex3f(dir.x, dir.y, dir.z);
+            glEnd();
+        }
+
+        // Input with operator >>
+        friend istream& operator>>(istream& is, Ray& r) {
+            is >> r.start >> r.dir;
+            return is;
+        }
+
+        // Output with operator <<
+        friend ostream& operator<<(ostream& os, Ray& r) {
+            os << fixed << setprecision(7) << "Ray : " << r.start << " " << r.dir;
+            return os;
+        }
+};
+
