@@ -2,10 +2,7 @@
 #include <GL/glut.h>
 #include <cmath>
 #include "Cubesphere.cpp"
-
-struct point {
-    GLfloat x, y, z;
-};
+#include "1805101_Classes.h"
 
 void initGL() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f); //black and opaque

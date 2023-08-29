@@ -213,3 +213,245 @@ class Ray
         }
 };
 
+
+
+
+
+class Object
+{
+    public:
+        Color color;
+        double coEfficients[4];
+        double shine;
+        bool isTexture;
+        bitmap_image texture;
+
+        Object() {
+            color = Color();
+            coEfficients[0] = coEfficients[1] = coEfficients[2] = coEfficients[3] = 0;
+            shine = 0;
+            isTexture = false;
+        }
+
+        Object(Color color, double coEfficients[4], double shine) : color(color), shine(shine) {
+            for (int i = 0; i < 4; i++) {
+                this->coEfficients[i] = coEfficients[i];
+            }
+            isTexture = false;
+        }
+
+        Object(Color color, double coEfficients[4], double shine, bitmap_image texture) : color(color), shine(shine), texture(texture) {
+            for (int i = 0; i < 4; i++) {
+                this->coEfficients[i] = coEfficients[i];
+            }
+            isTexture = true;
+        }
+
+        virtual void draw() {}
+
+        virtual double getIntersectingT(Ray ray) {}
+
+        virtual Point getNormal(Point intersectionPoint) {}
+
+        virtual Color getColor(Point intersectionPoint) {}
+
+        virtual void print() {}
+
+        // Input with operator >>
+        friend istream& operator>>(istream& is, Object& o) {
+            is >> o.color.r >> o.color.g >> o.color.b;
+            for (int i = 0; i < 4; i++) {
+                is >> o.coEfficients[i];
+            }
+            is >> o.shine;
+            return is;
+        }
+};
+
+
+class Sphere : public Object
+{
+    public:
+        Point center;
+        double radius;
+
+        Sphere() {
+            center = Point(0, 0, 0);
+            radius = 0;
+        }
+
+        Sphere(Point center, double radius, Color color, double coEfficients[4], double shine) : center(center), radius(radius), Object(color, coEfficients, shine) {}
+
+        Sphere(Point center, double radius, Color color, double coEfficients[4], double shine, bitmap_image texture) : center(center), radius(radius), Object(color, coEfficients, shine, texture) {}
+
+        void draw() {
+            glPushMatrix();
+                glTranslatef(center.x, center.y, center.z);
+                glColor3f(color.r / 255.0, color.g / 255.0, color.b / 255.0);
+                glutSolidSphere(radius, 100, 100);
+            glPopMatrix();
+            glEnd();
+        }
+
+        double getIntersectingT(Ray ray) {
+            Point start = ray.start;
+            Point dir = ray.dir;
+
+            double a = dir * dir;
+            double b = 2 * (dir * (start - center));
+            double c = (start - center) * (start - center) - radius * radius;
+
+            double d = b * b - 4 * a * c;
+
+            if (d < 0) {
+                return -1;
+            }
+
+            double t1 = (-b + sqrt(d)) / (2 * a);
+            double t2 = (-b - sqrt(d)) / (2 * a);
+
+            if (t1 < 0 && t2 < 0) {
+                return -1;
+            }
+
+            if (t1 < 0) {
+                return t2;
+            }
+
+            if (t2 < 0) {
+                return t1;
+            }
+
+            return min(t1, t2);
+        }
+
+        Point getNormal(Point intersectionPoint) {
+            Point normal = intersectionPoint - center;
+            normal.normalize();
+            return normal;
+        }
+
+        Color getColor(Point intersectionPoint) {
+            if (!isTexture) {
+                return color;
+            }
+
+            double theta = acos((intersectionPoint.z - center.z) / radius);
+            double phi = atan2(intersectionPoint.y - center.y, intersectionPoint.x - center.x);
+
+            double u = (phi + PI) / (2 * PI);
+            double v = (PI - theta) / PI;
+
+            int x = u * texture.width();
+            int y = v * texture.height();
+
+            unsigned char r, g, b;
+            texture.get_pixel(x, y, r, g, b);
+
+            return Color(r, g, b);
+        }
+
+        void print() {
+            cout << "Sphere" << endl;
+            cout << "Center : " << center << endl;
+            cout << "Radius : " << radius << endl;
+            cout << "Color : " << color << endl;
+            cout << "Co-efficients : ";
+            for (int i = 0; i < 4; i++) {
+                cout << coEfficients[i] << " ";
+            }
+            cout << endl;
+            cout << "Shine : " << shine << endl;
+        }
+
+}
+
+
+// Floor class with infinite length and width
+class Floor : public Object
+{
+    public:
+        double floorWidth, tileWidth;
+
+        Floor() {
+            floorWidth = tileWidth = 50;
+        }
+
+        Floor(double floorWidth, double tileWidth, Color color, double coEfficients[4], double shine) : floorWidth(floorWidth), tileWidth(tileWidth), Object(color, coEfficients, shine) {}
+
+        Floor(double floorWidth, double tileWidth, Color color, double coEfficients[4], double shine, bitmap_image texture) : floorWidth(floorWidth), tileWidth(tileWidth), Object(color, coEfficients, shine, texture) {}
+
+        void draw() {
+            int tiles = floorWidth / tileWidth;
+
+            glPushMatrix();
+                glTranslatef(-floorWidth / 2, -floorWidth / 2, 0);
+                for (int i = 0; i < tiles; i++) {
+                    for (int j = 0; j < tiles; j++) {
+                        if ((i + j) % 2 == 0) {
+                            glColor3f(1, 1, 1);
+                        } else {
+                            glColor3f(0, 0, 0);
+                        }
+                        glBegin(GL_QUADS);
+                            glVertex3f(i * tileWidth, j * tileWidth, 0);
+                            glVertex3f((i + 1) * tileWidth, j * tileWidth, 0);
+                            glVertex3f((i + 1) * tileWidth, (j + 1) * tileWidth, 0);
+                            glVertex3f(i * tileWidth, (j + 1) * tileWidth, 0);
+                        glEnd();
+                    }
+                }
+            glPopMatrix();
+        }
+
+        double getIntersectingT(Ray ray) {
+            Point start = ray.start;
+            Point dir = ray.dir;
+
+            double t = -start.z / dir.z;
+
+            if (t < 0) {
+                return -1;
+            }
+
+            return t;
+        }
+
+        Point getNormal(Point intersectionPoint) {
+            if (intersectionPoint.z > 0) {
+                return Point(0, 0, 1);
+            } else {
+                return Point(0, 0, -1);
+            }
+        }
+
+        Color getColor(Point intersectionPoint) {
+            if (!isTexture) {
+                return color;
+            }
+
+            double u = intersectionPoint.x / tileWidth;
+            double v = intersectionPoint.y / tileWidth;
+
+            int x = u * texture.width();
+            int y = v * texture.height();
+
+            unsigned char r, g, b;
+            texture.get_pixel(x, y, r, g, b);
+
+            return Color(r, g, b);
+        }
+
+        void print() {
+            cout << "Floor" << endl;
+            cout << "Floor Width : " << floorWidth << endl;
+            cout << "Tile Width : " << tileWidth << endl;
+            cout << "Color : " << color << endl;
+            cout << "Co-efficients : ";
+            for (int i = 0; i < 4; i++) {
+                cout << coEfficients[i] << " ";
+            }
+            cout << endl;
+            cout << "Shine : " << shine << endl;
+        }
+};
