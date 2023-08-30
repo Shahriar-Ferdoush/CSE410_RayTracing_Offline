@@ -10,6 +10,17 @@ void initGL() {
 }
 
 
+// Ray Tracing
+int recursionLevel;
+vector<Object*> objects;
+vector<Light> lights;
+vector<SpotLight> spotLights;
+
+Floor floor(50);
+Sphere sphere;
+Cube cube;
+Pyramid pyramid;
+
 // Global variables
 GLfloat eyex = 4, eyey = 4, eyez = 4;
 GLfloat centerx = 0, centery = 0, centerz = 0;
