@@ -479,3 +479,8 @@ class Floor : public Object
 };
 
 
+
+class Cube : public Object {
+    
+}
+
