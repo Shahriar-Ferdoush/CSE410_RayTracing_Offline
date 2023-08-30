@@ -116,15 +116,9 @@ void display() {
 
     drawAxes();
     drawGrid();
-    scale = 0.6f;
-    glScalef(scale, scale, scale);
 
-    glTranslatef(0, 1, 0);
-    glPushMatrix();
-        glTranslatef(x, 0, z);
-        glRotatef(theta, 1, 0, 0);
-        drawAllSphereFaces(r);
-    glPopMatrix();
+    // Draw a Checkerboard Floor object
+    
 
 
         

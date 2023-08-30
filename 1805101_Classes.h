@@ -426,20 +426,15 @@ class Floor : public Object
         }
 
         Color getColor(Point intersectionPoint) {
-            if (!isTexture) {
-                return color;
+            // Find if the point is in black or white tile
+            int x = intersectionPoint.x / tileWidth;
+            int y = intersectionPoint.y / tileWidth;
+
+            if ((x + y) % 2 == 0) {
+                return Color(1, 1, 1);
+            } else {
+                return Color(0, 0, 0);
             }
-
-            double u = intersectionPoint.x / tileWidth;
-            double v = intersectionPoint.y / tileWidth;
-
-            int x = u * texture.width();
-            int y = v * texture.height();
-
-            unsigned char r, g, b;
-            texture.get_pixel(x, y, r, g, b);
-
-            return Color(r, g, b);
         }
 
         void print() {
