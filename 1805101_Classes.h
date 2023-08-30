@@ -7,6 +7,18 @@
 
 using namespace std;
 
+
+extern int recursionLevel;
+extern vector<Object*> objects;
+extern vector<Light> lights;
+extern vector<SpotLight> spotLights;
+
+
+extern Floor floor;
+extern Sphere sphere;
+extern Cube cube;
+extern Pyramid pyramid;
+
 class Point
 {
     public:
@@ -557,6 +569,89 @@ class Cube : public Object {
             }
         }
 
-        
+
+}
+
+class Pyramid : public Object {
+    // This is the pyramid info input signature
+    // pyramid
+    // -40.0 0.0 5.0    	lowest point co-ordinate
+    // 30.0 40.0        	width height
+    // 1.0 0.0 0.0      	color
+    // 0.4 0.2 0.0 0.4  	ambient diffuse specular reflection coefficient
+    // 1		 	shininess
+
+    public:
+        Point lowerLeft;
+        double width, height;
+
+        Pyramid() {
+            lowerLeft = Point(0, 0, 0);
+            width = height = 1;
+            color = Color();
+        }
+
+        Pyramid(Point lowerLeft, double width, double height, Color color) : lowerLeft(lowerLeft), width(width), height(height), Object(color, NULL, 0) {}
+
+        Pyramid(Point lowerLeft, double width, double height, Color color, double coEfficients[4], double shine) : lowerLeft(lowerLeft), width(width), height(height), Object(color, coEfficients, shine) {}
+
+        Pyramid(Point lowerLeft, double width, double height, Color color, double coEfficients[4], double shine, bitmap_image texture) : lowerLeft(lowerLeft), width(width), height(height), Object(color, coEfficients, shine, texture) {}
+
+        void draw() {
+            glPushMatrix();
+                glTranslatef(lowerLeft.x, lowerLeft.y, lowerLeft.z);
+                glColor3f(color.r / 255.0, color.g / 255.0, color.b / 255.0);
+                glBegin(GL_TRIANGLES);
+                    glVertex3f(0, 0, 0);
+                    glVertex3f(width, 0, 0);
+                    glVertex3f(width / 2, height, 0);
+
+                    glVertex3f(0, 0, 0);
+                    glVertex3f(0, 0, width);
+                    glVertex3f(width / 2, height, width / 2);
+
+                    glVertex3f(0, 0, width);
+                    glVertex3f(width, 0, width);
+                    glVertex3f(width / 2, height, width / 2);
+
+                    glVertex3f(width, 0, 0);
+                    glVertex3f(width, 0, width);
+                    glVertex3f(width / 2, height, width / 2);
+                glEnd();
+            glPopMatrix();
+            glEnd();
+        }
+
+        double getIntersectingT(Ray ray) {
+            Point start = ray.start;
+            Point dir = ray.dir;
+
+            double t1 = (lowerLeft.x - start.x) / dir.x;
+            double t2 = (lowerLeft.x + width - start.x) / dir.x;
+            double t3 = (lowerLeft.y - start.y) / dir.y;
+            double t4 = (lowerLeft.y + width - start.y) / dir.y;
+            double t5 = (lowerLeft.z - start.z) / dir.z;
+            double t6 = (lowerLeft.z + width - start.z) / dir.z;
+
+            double tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+            double tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+            if (tmax < 0) {
+                return -1;
+            }
+
+            if (tmin > tmax) {
+                return -1;
+            }
+
+            return tmin;
+        }
+
+        Point getNormal(Point intersectionPoint) {
+            Point normal;
+
+            // calculate the normal on the intersection point
+
+        }
 }
 

@@ -121,11 +121,11 @@ void display() {
     glPopMatrix();
 
     // Draw a Floor
-    Floor floor(50);
+    // Floor floor(50);
     floor.draw();
 
     // Draw Shpere using 1805101_Classes.h
-    Sphere sphere;
+    // Sphere sphere;
     sphere.draw();
 
 
