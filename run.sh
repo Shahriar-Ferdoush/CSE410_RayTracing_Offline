@@ -1,4 +1,4 @@
-g++ main.cpp -o out -lglut -lGLU -lGL
+g++ -w main.cpp -o out -lglut -lGLU -lGL
 ./out
 
 # DELETE OUT FILE
