@@ -481,6 +481,82 @@ class Floor : public Object
 
 
 class Cube : public Object {
-    
+    // This is the cube info input signature 
+    // cube
+    // -100 -100 10		bottom lower left point
+    // 40.0			side
+    // 0.0 0.5 1.0		color
+    // 0.15 0.1 0.4 0.45	ambient diffuse specular reflection coefficient
+    // 10			shininess
+
+    public:
+        Point lowerLeft;
+        double side;
+
+        Cube() {
+            lowerLeft = Point(0, 0, 0);
+            side = 1;
+            color = Color();
+        }
+
+        Cube(Point lowerLeft, double side, Color color) : lowerLeft(lowerLeft), side(side), Object(color, NULL, 0) {}
+
+        Cube(Point lowerLeft, double side, Color color, double coEfficients[4], double shine) : lowerLeft(lowerLeft), side(side), Object(color, coEfficients, shine) {}
+
+        Cube(Point lowerLeft, double side, Color color, double coEfficients[4], double shine, bitmap_image texture) : lowerLeft(lowerLeft), side(side), Object(color, coEfficients, shine, texture) {}
+
+        void draw() {
+            glPushMatrix();
+                glTranslatef(lowerLeft.x, lowerLeft.y, lowerLeft.z);
+                glColor3f(color.r / 255.0, color.g / 255.0, color.b / 255.0);
+                glutSolidCube(side);
+            glPopMatrix();
+            glEnd();
+        }
+
+        double getIntersectingT(Ray ray) {
+            Point start = ray.start;
+            Point dir = ray.dir;
+
+            double t1 = (lowerLeft.x - start.x) / dir.x;
+            double t2 = (lowerLeft.x + side - start.x) / dir.x;
+            double t3 = (lowerLeft.y - start.y) / dir.y;
+            double t4 = (lowerLeft.y + side - start.y) / dir.y;
+            double t5 = (lowerLeft.z - start.z) / dir.z;
+            double t6 = (lowerLeft.z + side - start.z) / dir.z;
+
+            double tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+            double tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+            if (tmax < 0) {
+                return -1;
+            }
+
+            if (tmin > tmax) {
+                return -1;
+            }
+
+            return tmin;
+        }
+
+        Point getNormal(Point intersectionPoint) {
+            Point normal;
+
+            if (intersectionPoint.x == lowerLeft.x) {
+                normal = Point(-1, 0, 0);
+            } else if (intersectionPoint.x == lowerLeft.x + side) {
+                normal = Point(1, 0, 0);
+            } else if (intersectionPoint.y == lowerLeft.y) {
+                normal = Point(0, -1, 0);
+            } else if (intersectionPoint.y == lowerLeft.y + side) {
+                normal = Point(0, 1, 0);
+            } else if (intersectionPoint.z == lowerLeft.z) {
+                normal = Point(0, 0, -1);
+            } else if (intersectionPoint.z == lowerLeft.z + side) {
+                normal = Point(0, 0, 1);
+            }
+        }
+
+        
 }
 
