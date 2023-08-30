@@ -8,13 +8,25 @@
 using namespace std;
 
 
+// Class decralation
+class Object;
+class Light;
+class SpotLight;
+class Point;
+class Color;
+class Ray;
+class Sphere;
+class Floor;
+class Cube; 
+class Pyramid;
+
+// Extern variables
 extern int recursionLevel;
 extern vector<Object*> objects;
-extern vector<Light> lights;
-extern vector<SpotLight> spotLights;
+extern vector<Light*> lights;
+extern vector<SpotLight*> spotLights;
 
-
-extern Floor floor;
+extern Floor checkerBoard;
 extern Sphere sphere;
 extern Cube cube;
 extern Pyramid pyramid;
@@ -303,7 +315,7 @@ class Sphere : public Object
         Sphere() {
             center = Point(0, 0, 0);
             radius = 1;
-            color = Color();
+            color = Color(255, 0, 0);
         }
 
         Sphere(Point center, double radius, Color color) : center(center), radius(radius), Object(color, NULL, 0) {}
@@ -570,7 +582,7 @@ class Cube : public Object {
         }
 
 
-}
+};
 
 class Pyramid : public Object {
     // This is the pyramid info input signature
@@ -602,22 +614,35 @@ class Pyramid : public Object {
                 glTranslatef(lowerLeft.x, lowerLeft.y, lowerLeft.z);
                 glColor3f(color.r / 255.0, color.g / 255.0, color.b / 255.0);
                 glBegin(GL_TRIANGLES);
+                    glColor3f(1, 0, 0);
                     glVertex3f(0, 0, 0);
                     glVertex3f(width, 0, 0);
-                    glVertex3f(width / 2, height, 0);
+                    glVertex3f(width / 2, height, width / 2);
 
+                    glColor3f(0, 1, 0);
                     glVertex3f(0, 0, 0);
                     glVertex3f(0, 0, width);
                     glVertex3f(width / 2, height, width / 2);
 
+                    glColor3f(0, 0, 1);
                     glVertex3f(0, 0, width);
                     glVertex3f(width, 0, width);
                     glVertex3f(width / 2, height, width / 2);
 
+                    glColor3f(1, 1, 0);
                     glVertex3f(width, 0, 0);
                     glVertex3f(width, 0, width);
                     glVertex3f(width / 2, height, width / 2);
                 glEnd();
+
+                glBegin(GL_QUADS);
+                    glColor3f(1, 0, 1);
+                    glVertex3f(0, 0, 0);
+                    glVertex3f(width, 0, 0);
+                    glVertex3f(width, 0, width);
+                    glVertex3f(0, 0, width);
+                glEnd();
+
             glPopMatrix();
             glEnd();
         }
@@ -653,5 +678,5 @@ class Pyramid : public Object {
             // calculate the normal on the intersection point
 
         }
-}
+};
 

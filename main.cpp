@@ -11,15 +11,11 @@ void initGL() {
 
 
 // Ray Tracing
-int recursionLevel;
-vector<Object*> objects;
-vector<Light> lights;
-vector<SpotLight> spotLights;
 
-Floor floor(50);
+Floor checkerBoard(50);
 Sphere sphere;
-Cube cube;
 Pyramid pyramid;
+Cube cube;
 
 // Global variables
 GLfloat eyex = 4, eyey = 4, eyez = 4;
@@ -34,16 +30,6 @@ GLfloat rotateAngle = 0.0f;
 // Sphere Radius
 GLfloat r_max = 1 / sqrt(3);
 
-// Global varibales for scaling
-GLfloat scale = 1.0f;
-GLfloat radius = 0.0f; // (1 - scale) * r_max;
-GLfloat cylider_lenght = sqrt(2);
-
-GLfloat r = 1.0f;
-GLfloat theta = 0.0f;
-GLfloat thetaX = 0.0f;
-GLfloat z = 0.0f;
-GLfloat x = 0.0f;
 
 void drawAxes() {
     glLineWidth(3);
@@ -86,39 +72,6 @@ void drawGrid() {
 }
 
 
-void drawSingleFace(GLfloat r) {
-    Cubesphere c(r, 5, true);
-    c.drawFace(0);
-}
-
-
-void drawAllSphereFaces(GLfloat r) {
-    glPushMatrix();
-        glColor3f(1, 0, 0);
-        drawSingleFace(r);
-
-        glRotatef(90, 0, 1, 0);
-        glColor3f(0, 1, 0);
-        drawSingleFace(r);
-
-        glRotatef(90, 0, 1, 0);
-        glColor3f(1, 0, 0);
-        drawSingleFace(r);
-
-        glRotatef(90, 0, 1, 0);
-        glColor3f(0, 1, 0);
-        drawSingleFace(r);
-
-        glRotatef(90, 0, 0 ,1);
-        glColor3f(0, 0, 1);
-        drawSingleFace(r);
-
-        glRotatef(180, 0, 0, 1);
-        glColor3f(0, 0, 1);
-        drawSingleFace(r);
-    glPopMatrix();
-}
-
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
@@ -128,16 +81,22 @@ void display() {
     // Draw Axes and Grid
     glPushMatrix();
         drawAxes();
-        // drawGrid();
+        drawGrid();
     glPopMatrix();
 
     // Draw a Floor
-    // Floor floor(50);
-    floor.draw();
+    // checkerBoard.draw();
 
     // Draw Shpere using 1805101_Classes.h
-    // Sphere sphere;
-    sphere.draw();
+    // sphere.draw();
+
+    // Draw Pyramid using 1805101_Classes.h
+    // pyramid.draw();
+
+    // Draw Cube using 1805101_Classes.h
+    // cube.draw();
+
+
 
 
         
@@ -181,33 +140,6 @@ void keyboardListener(unsigned char key, int x, int y) {
             break;
         case '6': // Tilt Clockwise
             upz += translationSpeed;
-            break;
-
-        case 'a':
-            // rotate the sphere forward (clockwise)
-            theta += 5;
-            // translate by circumference
-            z = theta * 2 * M_PI / 360;
-            break;
-        case 'd':
-            // rotate the sphere backward (counter-clockwise)
-            theta -= 5;
-            // translate by circumference
-            z = theta * 2 * M_PI / 360;
-            break;
-
-        case 'w':  
-            // rotate the sphere left (counter-clockwise)
-            thetaX += 5;
-            // translate by circumference
-            x = thetaX * 2 * M_PI / 360;
-            break;
-
-        case 's':
-            // rotate the sphere right (clockwise)
-            thetaX -= 5;
-            // translate by circumference
-            x = thetaX * 2 * M_PI / 360;
             break;
     }
 
