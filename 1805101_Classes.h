@@ -112,6 +112,18 @@ class Color
             this->g = g;
             this->b = b;
         }
+
+        // Input with operator >>
+        friend istream& operator>>(istream& is, Color& c) {
+            is >> c.r >> c.g >> c.b;
+            return is;
+        }
+
+        // Output with operator <<
+        friend ostream& operator<<(ostream& os, Color& c) {
+            os << c.r << " " << c.g << " " << c.b;
+            return os;
+        }
 };
 
 // Point Light
@@ -221,6 +233,7 @@ class Object
 {
     public:
         Color color;
+        Point referencePoint;
         double coEfficients[4];
         double shine;
         bool isTexture;
@@ -277,8 +290,11 @@ class Sphere : public Object
 
         Sphere() {
             center = Point(0, 0, 0);
-            radius = 0;
+            radius = 1;
+            color = Color();
         }
+
+        Sphere(Point center, double radius, Color color) : center(center), radius(radius), Object(color, NULL, 0) {}
 
         Sphere(Point center, double radius, Color color, double coEfficients[4], double shine) : center(center), radius(radius), Object(color, coEfficients, shine) {}
 
@@ -364,18 +380,27 @@ class Sphere : public Object
             cout << "Shine : " << shine << endl;
         }
 
-}
+};
 
 
-// Floor class with infinite length and width
+// Checkerboard floor
+
 class Floor : public Object
 {
     public:
         double floorWidth, tileWidth;
 
         Floor() {
-            floorWidth = tileWidth = 50;
+            floorWidth = 10;
+            tileWidth = 1;
         }
+
+        Floor(double FloorWidth) {
+            floorWidth = FloorWidth;
+            tileWidth = 1;
+        }
+
+        Floor(double FloorWidth, Color color, double coEfficients[4], double shine) : floorWidth(FloorWidth), tileWidth(1), Object(color, coEfficients, shine) {}
 
         Floor(double floorWidth, double tileWidth, Color color, double coEfficients[4], double shine) : floorWidth(floorWidth), tileWidth(tileWidth), Object(color, coEfficients, shine) {}
 
@@ -385,7 +410,7 @@ class Floor : public Object
             int tiles = floorWidth / tileWidth;
 
             glPushMatrix();
-                glTranslatef(-floorWidth / 2, -floorWidth / 2, 0);
+                glTranslatef(-floorWidth / 2, 0, -floorWidth / 2);
                 for (int i = 0; i < tiles; i++) {
                     for (int j = 0; j < tiles; j++) {
                         if ((i + j) % 2 == 0) {
@@ -393,11 +418,13 @@ class Floor : public Object
                         } else {
                             glColor3f(0, 0, 0);
                         }
+
                         glBegin(GL_QUADS);
-                            glVertex3f(i * tileWidth, j * tileWidth, 0);
-                            glVertex3f((i + 1) * tileWidth, j * tileWidth, 0);
-                            glVertex3f((i + 1) * tileWidth, (j + 1) * tileWidth, 0);
-                            glVertex3f(i * tileWidth, (j + 1) * tileWidth, 0);
+                            // Plane on Y = 0
+                            glVertex3f(i * tileWidth, 0, j * tileWidth);
+                            glVertex3f((i + 1) * tileWidth, 0, j * tileWidth);
+                            glVertex3f((i + 1) * tileWidth, 0, (j + 1) * tileWidth);
+                            glVertex3f(i * tileWidth, 0, (j + 1) * tileWidth);
                         glEnd();
                     }
                 }
@@ -450,3 +477,5 @@ class Floor : public Object
             cout << "Shine : " << shine << endl;
         }
 };
+
+

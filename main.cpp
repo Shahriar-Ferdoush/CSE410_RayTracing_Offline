@@ -40,18 +40,18 @@ void drawAxes() {
     glLineWidth(3);
         //x axis
         glColor3f(1, 0, 0);
-        glVertex3f(-25, 0, 0);
-        glVertex3f(25, 0, 0);
+        glVertex3f(-100, 0, 0);
+        glVertex3f(100, 0, 0);
 
         //y axis
         glColor3f(0, 1, 0);
-        glVertex3f(0, -10, 0);
-        glVertex3f(0, 10, 0);
+        glVertex3f(0, -100, 0);
+        glVertex3f(0, 100, 0);
 
         //z axis
         glColor3f(0, 0, 1);
-        glVertex3f(0, 0, -25);
-        glVertex3f(0, 0, 25);
+        glVertex3f(0, 0, -100);
+        glVertex3f(0, 0, 100);
     glEnd();
 }
 
@@ -64,12 +64,12 @@ void drawGrid() {
                 continue; //SKIP the MAIN axes
 
             //lines parallel to Z-axis
-            glVertex3f(i, 0, -90);
-            glVertex3f(i, 0, 90);
+            glVertex3f(i, 0, -25);
+            glVertex3f(i, 0, 25);
 
             //lines parallel to X-axis
-            glVertex3f(-90, 0, i);
-            glVertex3f(90, 0, i);
+            glVertex3f(-25, 0, i);
+            glVertex3f(25, 0, i);
         }
     glEnd();
 }
@@ -114,11 +114,19 @@ void display() {
     glLoadIdentity();
     gluLookAt(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);
 
-    drawAxes();
-    drawGrid();
+    // Draw Axes and Grid
+    glPushMatrix();
+        drawAxes();
+        // drawGrid();
+    glPopMatrix();
 
-    // Draw a Checkerboard Floor object
-    
+    // Draw a Floor
+    Floor floor(50);
+    floor.draw();
+
+    // Draw Shpere using 1805101_Classes.h
+    Sphere sphere;
+    sphere.draw();
 
 
         
@@ -200,14 +208,14 @@ void specialKeyListener(int key, int x, int y) {
 
     switch (key) {
         case GLUT_KEY_UP: // Move Forward
-            eyex -= upx * translationSpeed;
-            eyey -= upy * translationSpeed;
-            eyez -= upz * translationSpeed;
+            eyex -= upx * translationSpeed * 10;
+            eyey -= upy * translationSpeed * 10;
+            eyez -= upz * translationSpeed * 10;
             break;
         case GLUT_KEY_DOWN: // Move Backward
-            eyex += upx * translationSpeed;
-            eyey += upy * translationSpeed;
-            eyez += upz * translationSpeed;
+            eyex += upx * translationSpeed * 10;
+            eyey += upy * translationSpeed * 10;
+            eyez += upz * translationSpeed * 10;
             break;
         case GLUT_KEY_RIGHT: // Move Right
             eyex += translationSpeed;
