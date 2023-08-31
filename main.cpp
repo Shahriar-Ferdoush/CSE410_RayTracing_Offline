@@ -18,7 +18,7 @@ Pyramid pyramid;
 Cube cube;
 
 // Global variables
-GLfloat eyex = 4, eyey = 4, eyez = 4;
+GLfloat eyex = 200, eyey = 0, eyez = 10;
 GLfloat centerx = 0, centery = 0, centerz = 0;
 GLfloat upx = 0, upy = 1, upz = 0;
 
@@ -29,6 +29,59 @@ GLfloat rotateAngle = 0.0f;
 
 // Sphere Radius
 GLfloat r_max = 1 / sqrt(3);
+
+// Ray Tracing Global Variables
+double near, far;
+double fovY;
+double aspectRatio;
+
+int recursionLevel;
+int noOfPixels;
+
+int noOfObjects;
+
+
+
+void takeInputs() {
+    // Input from description.txt
+    ifstream is;
+    is.open("description.txt");
+
+    is >> near >> far;
+    is >> fovY;
+    is >> aspectRatio;
+
+    is >> recursionLevel;
+    is >> noOfPixels;
+
+    // Handle Checkerbord Input
+    Floor cbFloor;
+    is >> cbFloor;
+
+    // Input Objects
+    is >> noOfObjects;
+
+    for (int i = 0; i < noOfObjects; i++) {
+        string objectType;
+        is >> objectType;
+
+        if (objectType == "sphere") {
+            Sphere sphere;
+            is >> sphere;
+        }
+        else if (objectType == "pyramid") {
+            Pyramid pyramid;
+            is >> pyramid;
+        }
+        else if (objectType == "cube") {
+            Cube cube;
+            is >> cube;
+        }
+
+    }
+
+
+}
 
 
 void drawAxes() {
@@ -112,7 +165,8 @@ void reshapeListener(GLsizei width, GLsizei height) {
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45.0f, aspect, 0.1f, 100.0f);
+    // gluPerspective(80.0f, aspect, 1.0f, 1000.0f);
+    gluPerspective(fovY, aspectRatio, far, near);
 
 }
 
@@ -186,6 +240,7 @@ void specialKeyListener(int key, int x, int y) {
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitWindowSize(640, 640);
+    takeInputs();
     glutInitWindowPosition(50, 50);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutCreateWindow("RayTracing");

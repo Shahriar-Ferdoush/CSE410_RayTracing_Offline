@@ -67,9 +67,9 @@ class Point
             return Point(x - p.x, y - p.y, z - p.z);
         }
 
-        // Point operator*(double d) {
-        //     return Point(x * d, y * d, z * d);
-        // }
+        Point operator*(double d) {
+            return Point(x * d, y * d, z * d);
+        }
 
         Point operator/(double d) {
             return Point(x / d, y / d, z / d);
@@ -534,6 +534,24 @@ class Floor : public Object
             }
             cout << endl;
             cout << "Shine : " << shine << endl;
+        }
+
+        // Input Operator Overloading
+        // Input Signature
+        // 50			width of each chell of the checkerboard
+        // 0.1 0.1 0.8		ambient, diffuse, reflection 
+        
+        friend istream& operator>>(istream &input, Floor &floor) {
+            input >> floor.floorWidth;
+
+            for (int i = 0; i < 4; i++) {
+                if ( i == 2) {
+                    continue;
+                }
+                input >> floor.coEfficients[i];
+            }
+
+            return input;
         }
 };
 
