@@ -27,9 +27,6 @@ extern vector<Light*> lights;
 extern vector<SpotLight*> spotLights;
 
 extern Floor checkerBoard;
-extern Sphere sphere;
-extern Cube cube;
-extern Pyramid pyramid;
 
 class Point
 {
@@ -153,30 +150,44 @@ class Color
 // Point Light
 class Light
 {
+    // Input signature
+    // 70.0 70.0 100.0 0.000002	position of the source, falloff parameter
     public:
         Point pos;
-        Color color;
+        double falloff;
 
         Light() {
             pos = Point(0, 0, 0);
-            color = Color(1, 1, 1);
+            falloff = 0;
         }
 
-        Light(Point pos, Color color) : pos(pos), color(color) {}
+        Light(Point pos, double falloff) {
+            this->pos = pos;
+            this->falloff = falloff;
+        }
 
         void draw() {
+            glColor3f(1, 1, 1);
             glPushMatrix();
                 glTranslatef(pos.x, pos.y, pos.z);
-                glColor3f(color.r, color.g, color.b);
-                glutSolidSphere(0.1, 10, 10);
+                glutSolidSphere(1, 10, 10);
             glPopMatrix();
-            glEnd();
         }
 
         // Input with operator >>
         friend istream& operator>>(istream& is, Light& l) {
-            is >> l.pos >> l.color.r >> l.color.g >> l.color.b;
+            is >> l.pos >> l.falloff;
             return is;
+        }
+
+        // Output with operator <<
+        friend ostream& operator<<(ostream& os, Light& l) {
+            os << l.pos << " " << l.falloff;
+            return os;
+        }
+
+        void print() {
+            cout << "Light: " << pos << " " << falloff << endl;
         }
 };
 
@@ -184,29 +195,63 @@ class Light
 // Spot Light
 class SpotLight
 {
+    // Input signature
+    // -70.0 70.0 70.0 0.0000002	position of the source, falloff parameter
+    // -10 10 10			point to which it is looking
+    // 30				cutoff angle in degrees
     public:
-        Light light;
-        Point lookAt;
-        double angle;
+        Point pos, lookAt;
+        double falloff, cutoffAngle;
 
         SpotLight() {
-            light = Light();
+            pos = Point(0, 0, 0);
             lookAt = Point(0, 0, 0);
-            angle = 0;
+            falloff = 0;
+            cutoffAngle = 0;
+        }
+
+        SpotLight(Point pos, Point lookAt, double falloff, double cutoffAngle) {
+            this->pos = pos;
+            this->lookAt = lookAt;
+            this->falloff = falloff;
+            this->cutoffAngle = cutoffAngle;
         }
 
         void draw() {
-            light.draw();
-            glBegin(GL_LINES);
-                glVertex3f(light.pos.x, light.pos.y, light.pos.z);
-                glVertex3f(lookAt.x, lookAt.y, lookAt.z);
-            glEnd();
+            glColor3f(1, 1, 1);
+            glPushMatrix();
+                glTranslatef(pos.x, pos.y, pos.z);
+
+                // Calculate the direction vector from position to lookAt point
+                Point direction = lookAt - pos;
+
+                // Calculate the rotation angles to align the cone with the direction
+                double angleX = atan2(direction.y, direction.z) * 180.0 / M_PI;
+                double angleY = atan2(direction.x, direction.z) * 180.0 / M_PI;
+
+                // Apply rotations and draw the cone
+                glRotated(90, 1, 0, 0);  // Rotate the cone to align with Z-axis
+                glRotated(angleX, 1, 0, 0);  // Rotate around X-axis
+                glRotated(angleY, 0, 1, 0);  // Rotate around Y-axis
+                glutSolidCone(1, 10, 10, 10);
+
+            glPopMatrix();
         }
 
         // Input with operator >>
-        friend istream& operator>>(istream& is, SpotLight& sl) {
-            is >> sl.light >> sl.lookAt >> sl.angle;
+        friend istream& operator>>(istream& is, SpotLight& l) {
+            is >> l.pos >> l.falloff >> l.lookAt >> l.cutoffAngle;
             return is;
+        }
+
+        // Output with operator <<
+        friend ostream& operator<<(ostream& os, SpotLight& l) {
+            os << l.pos << " " << l.falloff << " " << l.lookAt << " " << l.cutoffAngle;
+            return os;
+        }
+
+        void print() {
+            cout << "Spotlight : " << pos << " " << falloff << " " << lookAt << " " << cutoffAngle << endl;
         }
 };
 
@@ -218,7 +263,7 @@ class Ray
 
         Ray() {
             start = Point(0, 0, 0);
-            dir = Point(0, 0, 0);
+            dir = Point(0, 1, 0);
         }
 
         Ray(Point start, Point dir) {
@@ -731,34 +776,34 @@ class Pyramid : public Object {
                 glTranslatef(lowerLeft.x, lowerLeft.y, lowerLeft.z);
                 glColor3f(color.r, color.g, color.b);
                 glBegin(GL_TRIANGLES);
-                    glColor3f(1, 0, 0);
+                    // glColor3f(1, 0, 0);
                     glVertex3f(0, 0, 0);
                     glVertex3f(width, 0, 0);
                     glVertex3f(width / 2, height, width / 2);
 
-                    glColor3f(0, 1, 0);
+                    // glColor3f(0, 1, 0);
                     glVertex3f(0, 0, 0);
                     glVertex3f(0, 0, width);
                     glVertex3f(width / 2, height, width / 2);
 
-                    glColor3f(0, 0, 1);
+                    // glColor3f(0, 0, 1);
                     glVertex3f(0, 0, width);
                     glVertex3f(width, 0, width);
                     glVertex3f(width / 2, height, width / 2);
 
-                    glColor3f(1, 1, 0);
+                    // glColor3f(1, 1, 0);
                     glVertex3f(width, 0, 0);
                     glVertex3f(width, 0, width);
                     glVertex3f(width / 2, height, width / 2);
                 glEnd();
 
-                // glBegin(GL_QUADS);
-                //     glColor3f(1, 0, 1);
-                //     glVertex3f(0, 0, 0);
-                //     glVertex3f(width, 0, 0);
-                //     glVertex3f(width, 0, width);
-                //     glVertex3f(0, 0, width);
-                // glEnd();
+                glBegin(GL_QUADS);
+                    // glColor3f(1, 0, 1);
+                    glVertex3f(0, 0, 0);
+                    glVertex3f(width, 0, 0);
+                    glVertex3f(width, 0, width);
+                    glVertex3f(0, 0, width);
+                glEnd();
 
             glPopMatrix();
             glEnd();

@@ -18,9 +18,6 @@ vector<SpotLight*> spotLights;
 
 // Ray Tracing
 Floor checkerBoard;
-Sphere mySphere;
-Pyramid myPyramid;
-Cube myCube;
 
 // Global variables
 Point pos;   // position of the eye
@@ -44,10 +41,9 @@ int noOfPixels;
 
 int noOfObjects;
 
+int noOfLights;
+int noOfSpotLights;
 
-void rotate( Point &p, Point &axis, double angle ) {
-    p = p * cos(angle) + (axis ^ p) * sin(angle);
-}
 
 void takeInputs() {
     // Input from description.txt
@@ -63,12 +59,10 @@ void takeInputs() {
 
     // Handle Checkerbord Input
     is >> checkerBoard;
-    checkerBoard.print();
 
 
     // Input Objects
     is >> noOfObjects;
-    cout << "No of Objects: " << noOfObjects << endl;
 
     for(int i = 0; i < noOfObjects; i++) {
         string objectType;
@@ -91,24 +85,23 @@ void takeInputs() {
         objects.push_back(object);
     }
 
+    // Input Lights
+    is >> noOfLights;
 
-    // string objectType;
-    // is >> objectType;
+    for(int i = 0; i < noOfLights; i++) {
+        Light* light = new Light();
+        is >> *light;
+        lights.push_back(light);
+    }
 
-    
-    // is >> mySphere;
-    // mySphere.print();
+    // Input Spot Lights
+    is >> noOfSpotLights;
 
-    // is >> objectType;
-    // is >> myPyramid;
-    // myPyramid.print();
-
-    // is >> objectType;
-    // is >> myCube;
-    // myCube.print();
-
-
-    
+    for(int i = 0; i < noOfSpotLights; i++) {
+        SpotLight* spotLight = new SpotLight();
+        is >> *spotLight;
+        spotLights.push_back(spotLight);
+    }
 
 
 }
@@ -162,9 +155,7 @@ void display() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     // control viewing (or camera)
-    gluLookAt(pos.x,pos.y,pos.z,
-              pos.x+l.x,pos.y+l.y,pos.z+l.z,
-              u.x,u.y,u.z);
+    gluLookAt(pos.x, pos.y, pos.z, pos.x+l.x, pos.y+l.y, pos.z+l.z, u.x, u.y, u.z);
     
 
     // Draw Axes and Grid
@@ -175,19 +166,19 @@ void display() {
 
     // Draw All the Objects
     for(int i = 0; i < noOfObjects; i++) {
-        // Draw Object
         objects[i]->draw();
     }
 
-    // mySphere.draw();
-    // myPyramid.draw();
-    // myCube.draw();
+    // Draw All the Lights
+    for(int i = 0; i < noOfLights; i++) {
+        lights[i]->draw();
+    }
 
-
-
-
+    // Draw All the Spot Lights
+    for(int i = 0; i < noOfSpotLights; i++) {
+        spotLights[i]->draw();
+    }
         
-
     glutSwapBuffers();
 }
 
@@ -204,7 +195,7 @@ void reshapeListener(GLsizei width, GLsizei height) {
 }
 
 void keyboardListener(unsigned char key, int x, int y) {
-    double rate = 0.01;
+    double rate = 0.05;
 	switch(key){
 
 		case '1':
@@ -325,7 +316,7 @@ void specialKeyListener(int key, int x,int y)
 
 
 int main(int argc, char** argv) {
-    pos.x=0;pos.y=0;pos.z=20;
+    pos.x=0;pos.y=30;pos.z=200;
 
     l.x=0;l.y=0;l.z=-1;
     u.x=0;u.y=1;u.z=0;
