@@ -19,24 +19,17 @@ Sphere mySphere;
 Pyramid myPyramid;
 Cube myCube;
 
-// Global variables
-GLfloat eyex = -200, eyey = -50, eyez = -200;
-GLfloat centerx = 0, centery = 0, centerz = 0;
-GLfloat upx = 0, upy = 1, upz = 0;
-
-GLfloat rotateAngle = 0.0f;
-
-// Global variables
-struct point pos;   // position of the eye
-struct point l;     // look/forward direction
-struct point r;     // right direction
-struct point u;     // up direction
+// Global Points, eye position, look forward, up vector, right vector
+Point eye(-200, -50, -200);
+Point look(-1 / sqrt(2), 0, -1 / sqrt(2));
+Point up(0, 1, 0);
+Point rightVector(-1 / sqrt(2), 0, 1 / sqrt(2));
 
 
+double rotateAngle = 2*M_PI/180;
 
 
-// Sphere Radius
-GLfloat r_max = 1 / sqrt(3);
+// --------------------------------------------------------
 
 // Ray Tracing Global Variables
 double near, far;
@@ -49,6 +42,9 @@ int noOfPixels;
 int noOfObjects;
 
 
+void rotate( Point &p, Point &axis, double angle ) {
+    p = p * cos(angle) + (axis ^ p) * sin(angle);
+}
 
 void takeInputs() {
     // Input from description.txt
@@ -169,7 +165,7 @@ void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);
+    gluLookAt(eye.x, eye.y, eye.z, look.x, look.y, look.z, up.x, up.y, up.z);
 
     // Draw Axes and Grid
     glPushMatrix();
@@ -178,7 +174,7 @@ void display() {
     glPopMatrix();
 
     // Draw a Floor
-    // checkerBoard.draw();
+    checkerBoard.draw();
 
     // Draw All the Objects
     // for(int i = 0; i < noOfObjects; i++) {
@@ -218,22 +214,28 @@ void keyboardListener(unsigned char key, int x, int y) {
             exit(0);
             break;
         case '1': // Rotate/Look Left
-            eyex -= translationSpeed;
+            rotate(rightVector, up, rotateAngle);
+            rotate(look, up, rotateAngle);
             break;
         case '2': // Rotate/Look Right
-            eyex += translationSpeed;
+            rotate(rightVector, up, -rotateAngle);
+            rotate(look, up, -rotateAngle);
             break;
         case '3': // Look Up
-            eyey += translationSpeed;
+            rotate(up, rightVector, rotateAngle);
+            rotate(look, rightVector, rotateAngle);
             break;
         case '4': // Look Down
-            eyey -= translationSpeed;
+            rotate(up, rightVector, -rotateAngle);
+            rotate(look, rightVector, -rotateAngle);
             break;
         case '5': // Tilt Counterclockwise
-            upz -= translationSpeed;
+            rotate(rightVector, look, rotateAngle);
+            rotate(up, look, rotateAngle);
             break;
         case '6': // Tilt Clockwise
-            upz += translationSpeed;
+            rotate(rightVector, look, -rotateAngle);
+            rotate(up, look, -rotateAngle);
             break;
     }
 
@@ -241,34 +243,26 @@ void keyboardListener(unsigned char key, int x, int y) {
 }
 
 void specialKeyListener(int key, int x, int y) {
-    const GLfloat translationSpeed = 0.1f;
+    double translationSpeed = 5.0f;
 
     switch (key) {
         case GLUT_KEY_UP: // Move Forward
-            eyex -= upx * translationSpeed * 10;
-            eyey -= upy * translationSpeed * 10;
-            eyez -= upz * translationSpeed * 10;
+            eye = eye + look * translationSpeed;
             break;
         case GLUT_KEY_DOWN: // Move Backward
-            eyex += upx * translationSpeed * 10;
-            eyey += upy * translationSpeed * 10;
-            eyez += upz * translationSpeed * 10;
+            eye = eye - look * translationSpeed;
             break;
         case GLUT_KEY_RIGHT: // Move Right
-            eyex += translationSpeed * 10;
-            centerx += translationSpeed * 10;
+            eye = eye + rightVector * translationSpeed;
             break;
         case GLUT_KEY_LEFT: // Move Left
-            eyex -= translationSpeed * 10;
-            centerx -= translationSpeed * 10;
+            eye = eye - rightVector * translationSpeed;
             break;
         case GLUT_KEY_PAGE_UP: // Move Up
-            eyey += translationSpeed * 10;
-            centery += translationSpeed * 10;
+            eye = eye + up * translationSpeed;
             break;
         case GLUT_KEY_PAGE_DOWN: // Move Down
-            eyey -= translationSpeed * 10;
-            centery -= translationSpeed * 10;
+            eye = eye - up * translationSpeed;
             break;
     }
 
