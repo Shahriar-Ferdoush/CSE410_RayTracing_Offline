@@ -512,10 +512,10 @@ class Floor : public Object
         }
 
         Point getNormal(Point intersectionPoint) {
-            if (intersectionPoint.z >= 0) {
-                return Point(0, 0, 1);
+            if (intersectionPoint.y >= 0) {
+                return Point(0, 1, 0);
             } else {
-                return Point(0, 0, -1);
+                return Point(0, -1, 0);
             }
         }
 
@@ -752,13 +752,13 @@ class Pyramid : public Object {
                     glVertex3f(width / 2, height, width / 2);
                 glEnd();
 
-                glBegin(GL_QUADS);
-                    glColor3f(1, 0, 1);
-                    glVertex3f(0, 0, 0);
-                    glVertex3f(width, 0, 0);
-                    glVertex3f(width, 0, width);
-                    glVertex3f(0, 0, width);
-                glEnd();
+                // glBegin(GL_QUADS);
+                //     glColor3f(1, 0, 1);
+                //     glVertex3f(0, 0, 0);
+                //     glVertex3f(width, 0, 0);
+                //     glVertex3f(width, 0, width);
+                //     glVertex3f(0, 0, width);
+                // glEnd();
 
             glPopMatrix();
             glEnd();
