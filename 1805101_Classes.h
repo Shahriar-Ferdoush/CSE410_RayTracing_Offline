@@ -122,13 +122,13 @@ class Point
 class Color
 {
     public:
-        int r, g, b;
+        double r, g, b;
 
         Color() {
-            // Initialize with random color
-            r = rand() % 256;
-            g = rand() % 256;
-            b = rand() % 256;
+            // Initialize with random color 0 to 1
+            r = (rand() % 100) / 100.0;
+            g = (rand() % 100) / 100.0;
+            b = (rand() % 100) / 100.0;
         }
 
         Color(int r, int g, int b) {
@@ -159,7 +159,7 @@ class Light
 
         Light() {
             pos = Point(0, 0, 0);
-            color = Color(255, 255, 255);
+            color = Color(1, 1, 1);
         }
 
         Light(Point pos, Color color) : pos(pos), color(color) {}
@@ -167,7 +167,7 @@ class Light
         void draw() {
             glPushMatrix();
                 glTranslatef(pos.x, pos.y, pos.z);
-                glColor3f(color.r / 255.0, color.g / 255.0, color.b / 255.0);
+                glColor3f(color.r, color.g, color.b);
                 glutSolidSphere(0.1, 10, 10);
             glPopMatrix();
             glEnd();
@@ -284,7 +284,7 @@ class Object
             isTexture = true;
         }
 
-        // Setter Functions
+        // --------------- Setter Functions ---------------
         void setColor(Color color) {
             this->color = color;
         }
@@ -308,6 +308,8 @@ class Object
             isTexture = true;
         }
 
+
+        // --------------- Virutal Functions ---------------
         virtual void draw() {}
 
         virtual double getIntersectingT(Ray ray) {}
@@ -318,20 +320,19 @@ class Object
 
         virtual void print() {}
 
-        // Input with operator >>
-        friend istream& operator>>(istream& is, Object& o) {
-            is >> o.color.r >> o.color.g >> o.color.b;
-            for (int i = 0; i < 4; i++) {
-                is >> o.coEfficients[i];
-            }
-            is >> o.shine;
-            return is;
-        }
 };
 
 
 class Sphere : public Object
 {
+    // input signature
+    // sphere
+    // 20.0 20.0 20.0 		center
+    // 20.0 			radius
+    // 1.0 1.0 0.0 		color
+    // 0.04 0.03 0.03 0.9 	ambient diffuse specular reflection coefficient
+    // 30 			shininess
+    
     public:
         Point center;
         double radius;
@@ -339,7 +340,7 @@ class Sphere : public Object
         Sphere() {
             center = Point(0, 0, 0);
             radius = 1;
-            color = Color(255, 0, 0);
+            color = Color(1, 0, 0);
         }
 
         Sphere(Point center, double radius, Color color) : center(center), radius(radius), Object(color, NULL, 0) {}
@@ -351,7 +352,7 @@ class Sphere : public Object
         void draw() {
             glPushMatrix();
                 glTranslatef(center.x, center.y, center.z);
-                glColor3f(color.r / 255.0, color.g / 255.0, color.b / 255.0);
+                glColor3f(color.r, color.g, color.b);
                 glutSolidSphere(radius, 100, 100);
             glPopMatrix();
             glEnd();
@@ -431,6 +432,18 @@ class Sphere : public Object
             cout << endl;
             cout << "Shine : " << shine << endl;
         }
+
+        // Input Operator Overloading
+        friend istream& operator>>(istream& in, Sphere& sphere) {
+            in >> sphere.center;
+            in >> sphere.radius;
+            in >> sphere.color;
+            for (int i = 0; i < 4; i++) {
+                in >> sphere.coEfficients[i];
+            }
+            in >> sphere.shine;
+            return in;
+        }
 };
 
 
@@ -439,39 +452,34 @@ class Sphere : public Object
 class Floor : public Object
 {
     public:
-        double floorWidth, tileWidth;
+        double tileWidth;
+        int tileNumber;
 
         Floor() {
-            floorWidth = 10;
-            tileWidth = 1;
+            tileWidth = 10;
+            tileNumber = 100;
         }
 
-        Floor(double FloorWidth) {
-            floorWidth = FloorWidth;
-            tileWidth = 1;
+        Floor(double tileWidth, double coEfficients[4]) {
+            this->tileWidth = tileWidth;
+            this->coEfficients[0] = coEfficients[0];
+            this->coEfficients[1] = coEfficients[1];
+            this->coEfficients[2] = coEfficients[2];
+            this->coEfficients[3] = coEfficients[3];
+            isTexture = false;
         }
-
-        Floor(double FloorWidth, Color color, double coEfficients[4], double shine) : floorWidth(FloorWidth), tileWidth(1), Object(color, coEfficients, shine) {}
-
-        Floor(double floorWidth, double tileWidth, Color color, double coEfficients[4], double shine) : floorWidth(floorWidth), tileWidth(tileWidth), Object(color, coEfficients, shine) {}
-
-        Floor(double floorWidth, double tileWidth, Color color, double coEfficients[4], double shine, bitmap_image texture) : floorWidth(floorWidth), tileWidth(tileWidth), Object(color, coEfficients, shine, texture) {}
 
         void draw() {
-            int tiles = floorWidth / tileWidth;
-
             glPushMatrix();
-                glTranslatef(-floorWidth / 2, 0, -floorWidth / 2);
-                for (int i = 0; i < tiles; i++) {
-                    for (int j = 0; j < tiles; j++) {
+                glTranslatef(-tileWidth * tileNumber / 2, 0, -tileWidth * tileNumber / 2);
+                for (int i = 0; i < tileNumber; i++) {
+                    for (int j = 0; j < tileNumber; j++) {
                         if ((i + j) % 2 == 0) {
                             glColor3f(1, 1, 1);
                         } else {
                             glColor3f(0, 0, 0);
                         }
-
                         glBegin(GL_QUADS);
-                            // Plane on Y = 0
                             glVertex3f(i * tileWidth, 0, j * tileWidth);
                             glVertex3f((i + 1) * tileWidth, 0, j * tileWidth);
                             glVertex3f((i + 1) * tileWidth, 0, (j + 1) * tileWidth);
@@ -496,7 +504,7 @@ class Floor : public Object
             Point intersectionPoint = start + dir * t;
 
             // check if the intersection point is within the floor
-            if (intersectionPoint.x < 0 || intersectionPoint.x > floorWidth || intersectionPoint.y < 0 || intersectionPoint.y > floorWidth) {
+            if (intersectionPoint.x < 0 || intersectionPoint.x > tileWidth * tileNumber || intersectionPoint.y < 0 || intersectionPoint.y > tileWidth * tileNumber) {
                 return -1;
             }
 
@@ -525,7 +533,6 @@ class Floor : public Object
 
         void print() {
             cout << "Floor" << endl;
-            cout << "Floor Width : " << floorWidth << endl;
             cout << "Tile Width : " << tileWidth << endl;
             cout << "Color : " << color << endl;
             cout << "Co-efficients : ";
@@ -533,7 +540,6 @@ class Floor : public Object
                 cout << coEfficients[i] << " ";
             }
             cout << endl;
-            cout << "Shine : " << shine << endl;
         }
 
         // Input Operator Overloading
@@ -542,7 +548,7 @@ class Floor : public Object
         // 0.1 0.1 0.8		ambient, diffuse, reflection 
         
         friend istream& operator>>(istream &input, Floor &floor) {
-            input >> floor.floorWidth;
+            input >> floor.tileWidth;
 
             for (int i = 0; i < 4; i++) {
                 if ( i == 2) {
@@ -585,7 +591,7 @@ class Cube : public Object {
         void draw() {
             glPushMatrix();
                 glTranslatef(lowerLeft.x, lowerLeft.y, lowerLeft.z);
-                glColor3f(color.r / 255.0, color.g / 255.0, color.b / 255.0);
+                glColor3f(color.r, color.g, color.b );
                 glutSolidCube(side);
             glPopMatrix();
             glEnd();
@@ -681,6 +687,18 @@ class Cube : public Object {
             cout << endl;
             cout << "Shine : " << shine << endl;
         }
+
+        // Input Operator Overloading
+        friend istream& operator >> (istream& input, Cube& cube) {
+            input >> cube.lowerLeft;
+            input >> cube.side;
+            input >> cube.color;
+            for (int i = 0; i < 4; i++) {
+                input >> cube.coEfficients[i];
+            }
+            input >> cube.shine;
+            return input;
+        }
 };
 
 class Pyramid : public Object {
@@ -711,7 +729,7 @@ class Pyramid : public Object {
         void draw() {
             glPushMatrix();
                 glTranslatef(lowerLeft.x, lowerLeft.y, lowerLeft.z);
-                glColor3f(color.r / 255.0, color.g / 255.0, color.b / 255.0);
+                glColor3f(color.r, color.g, color.b);
                 glBegin(GL_TRIANGLES);
                     glColor3f(1, 0, 0);
                     glVertex3f(0, 0, 0);
@@ -776,6 +794,39 @@ class Pyramid : public Object {
 
             // calculate the normal on the intersection point
 
+        }
+
+        // Input Operator Overloading
+        // Input signature
+        // pyramid
+        // -40.0 0.0 5.0    	lowest point co-ordinate
+        // 30.0 40.0        	width height
+        // 1.0 0.0 0.0      	color
+        // 0.4 0.2 0.0 0.4  	ambient diffuse specular reflection coefficient
+        // 1		 	shininess
+        friend istream& operator >> (istream &input, Pyramid &pyramid) {
+            input >> pyramid.lowerLeft.x >> pyramid.lowerLeft.y >> pyramid.lowerLeft.z;
+            input >> pyramid.width >> pyramid.height;
+            input >> pyramid.color.r >> pyramid.color.g >> pyramid.color.b;
+            for (int i = 0; i < 4; i++) {
+                input >> pyramid.coEfficients[i];
+            }
+            input >> pyramid.shine;
+            return input;
+        };
+
+        void print() {
+            cout << "Pyramid" << endl;
+            cout << "Lower Left : " << lowerLeft << endl;
+            cout << "Width : " << width << endl;
+            cout << "Height : " << height << endl;
+            cout << "Color : " << color << endl;
+            cout << "Co-efficients : ";
+            for (int i = 0; i < 4; i++) {
+                cout << coEfficients[i] << " ";
+            }
+            cout << endl;
+            cout << "Shine : " << shine << endl;
         }
 };
 

@@ -4,6 +4,8 @@
 #include "Cubesphere.cpp"
 #include "1805101_Classes.h"
 
+using namespace std;
+
 void initGL() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f); //black and opaque
     glEnable(GL_DEPTH_TEST); //enable depth testing for z-culling
@@ -12,17 +14,23 @@ void initGL() {
 
 // Ray Tracing
 
-Floor checkerBoard(50);
-Sphere sphere;
-Pyramid pyramid;
-Cube cube;
+Floor checkerBoard;
+Sphere mySphere;
+Pyramid myPyramid;
+Cube myCube;
 
 // Global variables
-GLfloat eyex = 200, eyey = 0, eyez = 10;
+GLfloat eyex = -200, eyey = -50, eyez = -200;
 GLfloat centerx = 0, centery = 0, centerz = 0;
 GLfloat upx = 0, upy = 1, upz = 0;
 
 GLfloat rotateAngle = 0.0f;
+
+// Global variables
+struct point pos;   // position of the eye
+struct point l;     // look/forward direction
+struct point r;     // right direction
+struct point u;     // up direction
 
 
 
@@ -55,30 +63,62 @@ void takeInputs() {
     is >> noOfPixels;
 
     // Handle Checkerbord Input
-    Floor cbFloor;
-    is >> cbFloor;
+    // Floor cbFloor;
+    // is >> cbFloor;
+
+    is >> checkerBoard;
+    checkerBoard.print();
+
 
     // Input Objects
     is >> noOfObjects;
+    cout << "No of Objects: " << noOfObjects << endl;
 
-    for (int i = 0; i < noOfObjects; i++) {
-        string objectType;
-        is >> objectType;
+    // for(int i = 0; i < noOfObjects; i++) {
+    //     string objectType;
+    //     is >> objectType;
 
-        if (objectType == "sphere") {
-            Sphere sphere;
-            is >> sphere;
-        }
-        else if (objectType == "pyramid") {
-            Pyramid pyramid;
-            is >> pyramid;
-        }
-        else if (objectType == "cube") {
-            Cube cube;
-            is >> cube;
-        }
+    //     Object* object;
+    //     if(objectType == "sphere") {
+    //         object = new Sphere();
+    //         is >> *((Sphere*) object);
+    //     }
+    //     else if(objectType == "pyramid") {
+    //         object = new Pyramid();
+    //         is >> *((Pyramid*) object);
+    //     }
+    //     else if(objectType == "cube") {
+    //         object = new Cube();
+    //         is >> *((Cube*) object);
+    //     }
+    // }
 
-    }
+    // Input Sphere
+    // sphere
+    // 20.0 20.0 20.0 		center
+    // 20.0 			radius
+    // 1.0 1.0 0.0 		color
+    // 0.04 0.03 0.03 0.9 	ambient diffuse specular reflection coefficient
+    // 30 			shininess
+
+    string objectType;
+    is >> objectType;
+
+    
+    is >> mySphere;
+    mySphere.print();
+
+    is >> objectType;
+    cout << objectType << "-----------------------------" << endl;
+    is >> myPyramid;
+    myPyramid.print();
+
+    is >> objectType;
+    is >> myCube;
+    myCube.print();
+
+
+    
 
 
 }
@@ -90,17 +130,17 @@ void drawAxes() {
     glLineWidth(3);
         //x axis
         glColor3f(1, 0, 0);
-        glVertex3f(-100, 0, 0);
+        glVertex3f(0, 0, 0);
         glVertex3f(100, 0, 0);
 
         //y axis
         glColor3f(0, 1, 0);
-        glVertex3f(0, -100, 0);
+        glVertex3f(0, 0, 0);
         glVertex3f(0, 100, 0);
 
         //z axis
         glColor3f(0, 0, 1);
-        glVertex3f(0, 0, -100);
+        glVertex3f(0, 0, 0);
         glVertex3f(0, 0, 100);
     glEnd();
 }
@@ -140,14 +180,15 @@ void display() {
     // Draw a Floor
     // checkerBoard.draw();
 
-    // Draw Shpere using 1805101_Classes.h
-    // sphere.draw();
+    // Draw All the Objects
+    // for(int i = 0; i < noOfObjects; i++) {
+    //     // Draw Object
+    //     objects[i]->draw();
+    // }
 
-    // Draw Pyramid using 1805101_Classes.h
-    // pyramid.draw();
-
-    // Draw Cube using 1805101_Classes.h
-    // cube.draw();
+    mySphere.draw();
+    myPyramid.draw();
+    myCube.draw();
 
 
 
@@ -165,13 +206,12 @@ void reshapeListener(GLsizei width, GLsizei height) {
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    // gluPerspective(80.0f, aspect, 1.0f, 1000.0f);
     gluPerspective(fovY, aspectRatio, far, near);
 
 }
 
 void keyboardListener(unsigned char key, int x, int y) {
-    const GLfloat translationSpeed = 0.1f;
+    const GLfloat translationSpeed = 10.0f;
 
     switch (key) {
         case 27: // ESC key
@@ -215,20 +255,20 @@ void specialKeyListener(int key, int x, int y) {
             eyez += upz * translationSpeed * 10;
             break;
         case GLUT_KEY_RIGHT: // Move Right
-            eyex += translationSpeed;
-            centerx += translationSpeed;
+            eyex += translationSpeed * 10;
+            centerx += translationSpeed * 10;
             break;
         case GLUT_KEY_LEFT: // Move Left
-            eyex -= translationSpeed;
-            centerx -= translationSpeed;
+            eyex -= translationSpeed * 10;
+            centerx -= translationSpeed * 10;
             break;
         case GLUT_KEY_PAGE_UP: // Move Up
-            eyey += translationSpeed;
-            centery += translationSpeed;
+            eyey += translationSpeed * 10;
+            centery += translationSpeed * 10;
             break;
         case GLUT_KEY_PAGE_DOWN: // Move Down
-            eyey -= translationSpeed;
-            centery -= translationSpeed;
+            eyey -= translationSpeed * 10;
+            centery -= translationSpeed * 10;
             break;
     }
 
