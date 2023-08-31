@@ -67,9 +67,9 @@ class Point
             return Point(x - p.x, y - p.y, z - p.z);
         }
 
-        Point operator*(double d) {
-            return Point(x * d, y * d, z * d);
-        }
+        // Point operator*(double d) {
+        //     return Point(x * d, y * d, z * d);
+        // }
 
         Point operator/(double d) {
             return Point(x / d, y / d, z / d);
@@ -284,6 +284,30 @@ class Object
             isTexture = true;
         }
 
+        // Setter Functions
+        void setColor(Color color) {
+            this->color = color;
+        }
+
+        void setReferencePoint(Point referencePoint) {
+            this->referencePoint = referencePoint;
+        }
+
+        void setCoEfficients(double coEfficients[4]) {
+            for (int i = 0; i < 4; i++) {
+                this->coEfficients[i] = coEfficients[i];
+            }
+        }
+
+        void setShine(double shine) {
+            this->shine = shine;
+        }
+
+        void setTexture(bitmap_image texture) {
+            this->texture = texture;
+            isTexture = true;
+        }
+
         virtual void draw() {}
 
         virtual double getIntersectingT(Ray ray) {}
@@ -338,8 +362,8 @@ class Sphere : public Object
             Point dir = ray.dir;
 
             double a = dir * dir;
-            double b = 2 * (dir * (start - center));
-            double c = (start - center) * (start - center) - radius * radius;
+            double b = 2 * (dir * start);
+            double c = (start * start) - radius * radius;
 
             double d = b * b - 4 * a * c;
 
@@ -347,13 +371,16 @@ class Sphere : public Object
                 return -1;
             }
 
+            // If d >= 0, there are two roots
             double t1 = (-b + sqrt(d)) / (2 * a);
             double t2 = (-b - sqrt(d)) / (2 * a);
 
+            // Both behind the origin
             if (t1 < 0 && t2 < 0) {
                 return -1;
             }
 
+            // One behind the origin
             if (t1 < 0) {
                 return t2;
             }
@@ -362,6 +389,7 @@ class Sphere : public Object
                 return t1;
             }
 
+            // Both in front of the origin, return whats closer
             return min(t1, t2);
         }
 
@@ -403,7 +431,6 @@ class Sphere : public Object
             cout << endl;
             cout << "Shine : " << shine << endl;
         }
-
 };
 
 
@@ -465,11 +492,19 @@ class Floor : public Object
                 return -1;
             }
 
+            // calculate the intersection point
+            Point intersectionPoint = start + dir * t;
+
+            // check if the intersection point is within the floor
+            if (intersectionPoint.x < 0 || intersectionPoint.x > floorWidth || intersectionPoint.y < 0 || intersectionPoint.y > floorWidth) {
+                return -1;
+            }
+
             return t;
         }
 
         Point getNormal(Point intersectionPoint) {
-            if (intersectionPoint.z > 0) {
+            if (intersectionPoint.z >= 0) {
                 return Point(0, 0, 1);
             } else {
                 return Point(0, 0, -1);
@@ -581,7 +616,53 @@ class Cube : public Object {
             }
         }
 
+        Color getColor(Point intersectionPoint) {
+            if (!isTexture) {
+                return color;
+            }
 
+            double u, v;
+            if (intersectionPoint.x == lowerLeft.x) {
+                u = (intersectionPoint.z - lowerLeft.z) / side;
+                v = (intersectionPoint.y - lowerLeft.y) / side;
+            } else if (intersectionPoint.x == lowerLeft.x + side) {
+                u = (intersectionPoint.z - lowerLeft.z) / side;
+                v = (intersectionPoint.y - lowerLeft.y) / side;
+            } else if (intersectionPoint.y == lowerLeft.y) {
+                u = (intersectionPoint.x - lowerLeft.x) / side;
+                v = (intersectionPoint.z - lowerLeft.z) / side;
+            } else if (intersectionPoint.y == lowerLeft.y + side) {
+                u = (intersectionPoint.x - lowerLeft.x) / side;
+                v = (intersectionPoint.z - lowerLeft.z) / side;
+            } else if (intersectionPoint.z == lowerLeft.z) {
+                u = (intersectionPoint.x - lowerLeft.x) / side;
+                v = (intersectionPoint.y - lowerLeft.y) / side;
+            } else if (intersectionPoint.z == lowerLeft.z + side) {
+                u = (intersectionPoint.x - lowerLeft.x) / side;
+                v = (intersectionPoint.y - lowerLeft.y) / side;
+            }
+
+            int x = u * texture.width();
+            int y = v * texture.height();
+
+            unsigned char r, g, b;
+            texture.get_pixel(x, y, r, g, b);
+
+            return Color(r, g, b);
+        }
+
+        void print() {
+            cout << "Cube" << endl;
+            cout << "Lower Left : " << lowerLeft << endl;
+            cout << "Side : " << side << endl;
+            cout << "Color : " << color << endl;
+            cout << "Co-efficients : ";
+            for (int i = 0; i < 4; i++) {
+                cout << coEfficients[i] << " ";
+            }
+            cout << endl;
+            cout << "Shine : " << shine << endl;
+        }
 };
 
 class Pyramid : public Object {
