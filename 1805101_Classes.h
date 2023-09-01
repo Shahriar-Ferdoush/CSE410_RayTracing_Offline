@@ -865,6 +865,15 @@ class Floor : public Object
 
             return input;
         }
+
+        ~Floor() {
+            // Shrinking the vectors
+            buffer_b.clear();
+            buffer_b.shrink_to_fit();
+
+            buffer_w.clear();
+            buffer_w.shrink_to_fit();
+        }
 };
 
 
