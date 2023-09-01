@@ -200,8 +200,9 @@ void capture() {
             }
 
             if(nearestObjectIndex != -1) {
-                Point intersection = ray.origin + ray.dir*nearestObjectT;
-                color = objects[nearestObjectIndex]->getColor(intersection);
+                Point intersection = ray.origin + ray.dir*nearestObjectT; 
+                color = objects[nearestObjectIndex]->getColor(intersection);  // ------- have to change this -------
+                // double intst = objects[nearestObjectIndex]->getRayTraced(ray, 1, color);
 
                 image.set_pixel(j, i, color.r * 255, color.g * 255, color.b * 255);
             }

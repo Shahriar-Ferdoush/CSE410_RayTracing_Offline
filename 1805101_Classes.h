@@ -134,6 +134,26 @@ class Color
             this->b = b;
         }
 
+        // Multiply with a scalar
+        Color operator*(double d) {
+            return Color(r * d, g * d, b * d);
+        }
+
+        // Add with a scalar
+        Color operator+(double d) {
+            return Color(r + d, g + d, b + d);
+        }
+
+        // Multiply with another color
+        Color operator*(Color c) {
+            return Color(r * c.r, g * c.g, b * c.b);
+        }
+
+        // Add with another color
+        Color operator+(Color c) {
+            return Color(r + c.r, g + c.g, b + c.b);
+        }
+
         // Input with operator >>
         friend istream& operator>>(istream& is, Color& c) {
             is >> c.r >> c.g >> c.b;
@@ -155,15 +175,18 @@ class Light
     public:
         Point pos;
         double falloff;
+        Color color;
 
         Light() {
             pos = Point(0, 0, 0);
             falloff = 0;
+            color = Color(1,1,1);
         }
 
         Light(Point pos, double falloff) {
             this->pos = pos;
             this->falloff = falloff;
+            color = Color(1,1,1);
         }
 
         void draw() {
@@ -202,12 +225,14 @@ class SpotLight
     public:
         Point pos, lookAt;
         double falloff, cutoffAngle;
+        Color color;
 
         SpotLight() {
             pos = Point(0, 0, 0);
             lookAt = Point(0, 0, 0);
             falloff = 0;
             cutoffAngle = 0;
+            color = Color(1,1,1);
         }
 
         SpotLight(Point pos, Point lookAt, double falloff, double cutoffAngle) {
@@ -215,6 +240,7 @@ class SpotLight
             this->lookAt = lookAt;
             this->falloff = falloff;
             this->cutoffAngle = cutoffAngle;
+            color = Color(1,1,1);
         }
 
         void draw() {
@@ -364,6 +390,98 @@ class Object
         virtual Color getColor(Point intersectionPoint) {}
 
         virtual void print() {}
+
+        // --------------- Ray Tracing Function ---------------
+        virtual double getRayTraced(Ray ray, int level, Color &color) {
+            double t = getIntersectingT(ray);
+
+            if (t < 0) {
+                return -1;
+            }
+
+            if (level == 0) {
+                return t;
+            }
+
+            Point intersectionPoint = ray.origin + ray.dir * t;
+            Color rawColor = getColor(intersectionPoint);
+
+            // Ambient
+            color = rawColor * coEfficients[0];
+
+            // For each light source
+            for (int i = 0; i < lights.size(); i++) {
+                Light* light = lights[i];
+                Point lightPos = light->pos;
+
+                Point rayDirection = lightPos - intersectionPoint;
+                rayDirection.normalize();
+
+                Ray lightRay(intersectionPoint, rayDirection);
+                Point normal = getNormal(intersectionPoint);
+
+                bool isShadow = false;
+                for (int j = 0; j < objects.size(); j++) {
+                    double t = objects[j]->getIntersectingT(lightRay);
+                    if (t > 0) {
+                        isShadow = true;
+                        break;
+                    }
+                }
+
+                if (!isShadow) {
+                    // Diffuse
+                    double lambert = max(0.0, lightRay.dir * normal);
+
+                    Ray reflectedRay(intersectionPoint, rayDirection - normal * 2 * (rayDirection * normal));
+                    reflectedRay.dir.normalize();
+
+                    double phong = max(0.0, reflectedRay.dir * ray.dir);
+
+                    color = color + (rawColor * light->color) * (lambert * coEfficients[1] + pow(phong, shine) * coEfficients[2]);
+                }
+            }
+
+            // Spotlights
+
+            for (int i = 0; i < spotLights.size(); i++) {
+                SpotLight* sLight = spotLights[i];
+                Point lightPos = sLight->pos;
+
+                Point rayDirection = lightPos - intersectionPoint;
+                rayDirection.normalize();
+
+                double dotProduct = rayDirection * sLight->lookAt;
+                double angle = acos(dotProduct / (rayDirection.length() * sLight->lookAt.length())) * 180 / PI;
+
+                if (angle <= sLight->cutoffAngle) {
+                    Ray lightRay(intersectionPoint, rayDirection);
+                    Point normal = getNormal(intersectionPoint);
+
+                    Ray reflectedRay(intersectionPoint, rayDirection - normal * 2 * (rayDirection * normal));
+
+                    bool isShadow = false;
+                    for (int j = 0; j < objects.size(); j++) {
+                        double t = objects[j]->getIntersectingT(lightRay);
+                        if (t > 0) {
+                            isShadow = true;
+                            break;
+                        }
+                    }
+
+                    if (!isShadow) {
+                        // Diffuse
+                        double lambert = max(0.0, lightRay.dir * normal);
+                        double phong = max(0.0, reflectedRay.dir * ray.dir);
+
+                        color = color + (rawColor * sLight->color) * (lambert * coEfficients[1] + pow(phong, shine) * coEfficients[2]);
+                    }
+                }
+            }
+
+
+            return t;
+        }
 
 };
 
@@ -767,6 +885,8 @@ class Triangle : public Object {
             color = Color();
         }
 
+        Triangle(Point a, Point b, Point c) : a(a), b(b), c(c), Object() {}
+
         Triangle(Point a, Point b, Point c, Color color) : a(a), b(b), c(c), Object(color, NULL, 0) {}
 
         Triangle(Point a, Point b, Point c, Color color, double coEfficients[4], double shine) : a(a), b(b), c(c), Object(color, coEfficients, shine) {}
@@ -891,25 +1011,82 @@ class Pyramid : public Object {
             Point origin = ray.origin;
             Point dir = ray.dir;
 
-            double t1 = (lowerLeft.x - origin.x) / dir.x;
-            double t2 = (lowerLeft.x + width - origin.x) / dir.x;
-            double t3 = (lowerLeft.y - origin.y) / dir.y;
-            double t4 = (lowerLeft.y + width - origin.y) / dir.y;
-            double t5 = (lowerLeft.z - origin.z) / dir.z;
-            double t6 = (lowerLeft.z + width - origin.z) / dir.z;
+            double tmin = -1;
 
-            double tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-            double tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+            // double t1 = (lowerLeft.x - origin.x) / dir.x;
+            // double t2 = (lowerLeft.x + width - origin.x) / dir.x;
+            // double t3 = (lowerLeft.y - origin.y) / dir.y;
+            // double t4 = (lowerLeft.y + width - origin.y) / dir.y;
+            // double t5 = (lowerLeft.z - origin.z) / dir.z;
+            // double t6 = (lowerLeft.z + width - origin.z) / dir.z;
 
-            if (tmax < 0) {
-                return -1;
+            // double tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+            // double tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+            // if (tmax < 0) {
+            //     return -1;
+            // }
+
+            // if (tmin > tmax) {
+            //     return -1;
+            // }
+
+            Triangle face1 = Triangle(lowerLeft, Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2));
+            Triangle face2 = Triangle(lowerLeft, Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2));
+            Triangle face3 = Triangle(Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2));
+            Triangle face4 = Triangle(Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2));
+
+            double t1 = face1.getIntersectingT(ray);
+            double t2 = face2.getIntersectingT(ray);
+            double t3 = face3.getIntersectingT(ray);
+            double t4 = face4.getIntersectingT(ray);
+
+            // return minimum of t1, t2, t3, t4
+            if (t1 > 0) {
+                tmin = t1;
+            }
+            if (t2 > 0) {
+                if (tmin < 0) {
+                    tmin = t2;
+                } else {
+                    tmin = min(tmin, t2);
+                }
+            }
+            if (t3 > 0) {
+                if (tmin < 0) {
+                    tmin = t3;
+                } else {
+                    tmin = min(tmin, t3);
+                }
+            }
+            if (t4 > 0) {
+                if (tmin < 0) {
+                    tmin = t4;
+                } else {
+                    tmin = min(tmin, t4);
+                }
             }
 
-            if (tmin > tmax) {
-                return -1;
+            // Intersection with the base
+            double t5 = (lowerLeft.y - origin.y) / dir.y;
+
+            if (t5 > 0) {
+                Point intersectionPoint = origin + dir * t5;
+                if (intersectionPoint.x >= lowerLeft.x && intersectionPoint.x <= lowerLeft.x + width && intersectionPoint.z >= lowerLeft.z && intersectionPoint.z <= lowerLeft.z + width) {
+                    if (tmin < 0) {
+                        tmin = t5;
+                    } else {
+                        tmin = min(tmin, t5);
+                    }
+                }
             }
+            
 
             return tmin;
+        }
+
+        Color getColor(Point intersectionPoint) {
+            return color;
         }
 
         Point getNormal(Point intersectionPoint) {
