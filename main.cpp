@@ -60,6 +60,9 @@ void takeInputs() {
     // Handle Checkerbord Input
     is >> checkerBoard;
 
+    // Push the checkerboard in the objects vector
+    // objects.push_back(checkerBoard);
+
 
     // Input Objects
     is >> noOfObjects;
@@ -106,7 +109,6 @@ void takeInputs() {
 
 }
 
-
 void drawAxes() {
     glPushMatrix();
         glLineWidth(3);
@@ -148,7 +150,86 @@ void drawGrid() {
         }
     glEnd();
 }
+int print = 5;
+void capture() {
+    // Initialze bitmap iamge as black
+    bitmap_image image(noOfPixels, noOfPixels);
+    image.clear();
 
+    // Calculate nare plane size
+    double nearPlaneHeight = 2 * tan((fovY * PI) / (2 * 180)) * near;
+    double nearPlaneWidth = nearPlaneHeight;
+
+    // Calculate pixel size
+    double pixelSize = nearPlaneHeight / noOfPixels;
+    
+    // Calculate the top left corner of the image
+    Point topLeft = pos + l*near - r*(nearPlaneWidth/2) + u*(nearPlaneHeight/2);
+
+    // Calculate top left corner Pixel middle point
+    topLeft = topLeft + r*(pixelSize/2) - u*(pixelSize/2);
+
+    int nearestObjectIndex = -1;
+    double nearestObjectT = INT_MAX;
+    double currentObjectT;
+
+    // Generate Ray from the eye to all pixel middle point using the top left corner
+    for(int i = 0; i < noOfPixels; i++) {
+        for(int j = 0; j < noOfPixels; j++) {
+            Point pixelMiddle = topLeft + r*(pixelSize*j) - u*(pixelSize*i);
+            Ray ray(pos, pixelMiddle - pos);
+            Color color(0, 0, 0);
+
+
+            nearestObjectIndex = -1;
+            nearestObjectT = INT_MAX;
+
+            for (int k = 0; k < objects.size(); k++) {
+                currentObjectT = objects[k]->getIntersectingT(ray);
+                if(currentObjectT > 0 && (nearestObjectIndex == -1 || currentObjectT < nearestObjectT)) {
+                    nearestObjectT = currentObjectT;
+                    nearestObjectIndex = k;
+                }
+                if(nearestObjectIndex == 1) {
+                    cout << "here" << endl;
+                }
+
+            }
+
+            if(nearestObjectIndex != -1) {
+                Point intersection = ray.start + ray.dir*nearestObjectT;
+                color = objects[nearestObjectIndex]->getColor(intersection);
+
+                image.set_pixel(j, i, color.r * 255, color.g * 255, color.b * 255);
+            }
+            
+
+            // // Calculate the intersection point of the ray with the first object
+            // double intersectingT = objects[0]->getIntersectingT(ray);
+            // Point intersection = ray.start + ray.dir*intersectingT;
+
+            // // Calculate the color of the pixel
+            // Color color = objects[0]->getColor(intersection);
+
+            // // Print color value in a file
+            // ofstream myfile;
+            // myfile.open ("example.txt", ios::app);
+            // // print color value in exists and if not use a tab
+            // if (myfile.is_open())
+            // {
+            //     myfile << color.r << "\t" << color.g << "\t" << color.b << "\t";
+            //     myfile.close();
+            // }
+            // else cout << "Unable to open file";
+
+            // Set the color of the pixel
+            image.set_pixel(j, i, color.r * 255, color.g * 255, color.b * 255);
+        }
+    }
+
+    image.save_image("out.bmp");
+
+}
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -197,6 +278,10 @@ void reshapeListener(GLsizei width, GLsizei height) {
 void keyboardListener(unsigned char key, int x, int y) {
     double rate = 0.05;
 	switch(key){
+        
+        case '0':
+            capture();
+            break;
 
 		case '1':
 			r.x = r.x*cos(rate)+l.x*sin(rate);
@@ -325,7 +410,7 @@ int main(int argc, char** argv) {
     takeInputs();
 
     glutInit(&argc, argv);
-    glutInitWindowSize(640, 640);
+    glutInitWindowSize(noOfPixels, noOfPixels);
     glutInitWindowPosition(50, 50);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutCreateWindow("RayTracing");

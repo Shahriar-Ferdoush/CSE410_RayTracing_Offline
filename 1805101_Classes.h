@@ -83,13 +83,13 @@ class Point
         }
 
         // Magnitude
-        double lenght() {
+        double length() {
             return sqrt(x * x + y * y + z * z);
         }
 
         // Normalize this
         void normalize() {
-            double d = lenght();
+            double d = length();
             x /= d;
             y /= d;
             z /= d;
@@ -123,9 +123,9 @@ class Color
 
         Color() {
             // Initialize with random color 0 to 1
-            r = (rand() % 100) / 100.0;
-            g = (rand() % 100) / 100.0;
-            b = (rand() % 100) / 100.0;
+            r = (rand() % 256) / 256.0;
+            g = (rand() % 256) / 256.0;
+            b = (rand() % 256) / 256.0;
         }
 
         Color(int r, int g, int b) {
