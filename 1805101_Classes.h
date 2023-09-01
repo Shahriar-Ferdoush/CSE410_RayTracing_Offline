@@ -259,15 +259,15 @@ class SpotLight
 class Ray
 {
     public:
-        Point start, dir;
+        Point origin, dir;
 
         Ray() {
-            start = Point(0, 0, 0);
+            origin = Point(0, 0, 0);
             dir = Point(0, 1, 0);
         }
 
-        Ray(Point start, Point dir) {
-            this->start = start;
+        Ray(Point origin, Point dir) {
+            this->origin = origin;
 
             // Normalize direction
             dir.normalize();
@@ -276,20 +276,20 @@ class Ray
 
         void draw() {
             glBegin(GL_LINES);
-                glVertex3f(start.x, start.y, start.z);
+                glVertex3f(origin.x, origin.y, origin.z);
                 glVertex3f(dir.x, dir.y, dir.z);
             glEnd();
         }
 
         // Input with operator >>
         friend istream& operator>>(istream& is, Ray& r) {
-            is >> r.start >> r.dir;
+            is >> r.origin >> r.dir;
             return is;
         }
 
         // Output with operator <<
         friend ostream& operator<<(ostream& os, Ray& r) {
-            os << fixed << setprecision(7) << "Ray : " << r.start << " " << r.dir;
+            os << fixed << setprecision(7) << "Ray : " << r.origin << " " << r.dir;
             return os;
         }
 };
@@ -404,12 +404,12 @@ class Sphere : public Object
         }
 
         double getIntersectingT(Ray ray) {
-            Point start = ray.start;
+            Point origin = ray.origin - center;
             Point dir = ray.dir;
 
             double a = dir * dir;
-            double b = 2 * (dir * start);
-            double c = (start * start) - radius * radius;
+            double b = 2 * (dir * origin);
+            double c = (origin * origin) - radius * radius;
 
             double d = b * b - 4 * a * c;
 
@@ -516,7 +516,7 @@ class Floor : public Object
 
         void draw() {
             glPushMatrix();
-                glTranslatef(-tileWidth * tileNumber / 2, 0, -tileWidth * tileNumber / 2);
+                this->referencePoint = Point(-tileWidth * tileNumber / 2, 0, -tileWidth * tileNumber / 2);
                 for (int i = 0; i < tileNumber; i++) {
                     for (int j = 0; j < tileNumber; j++) {
                         if ((i + j) % 2 == 0) {
@@ -525,10 +525,10 @@ class Floor : public Object
                             glColor3f(0, 0, 0);
                         }
                         glBegin(GL_QUADS);
-                            glVertex3f(i * tileWidth, 0, j * tileWidth);
-                            glVertex3f((i + 1) * tileWidth, 0, j * tileWidth);
-                            glVertex3f((i + 1) * tileWidth, 0, (j + 1) * tileWidth);
-                            glVertex3f(i * tileWidth, 0, (j + 1) * tileWidth);
+                            glVertex3f(referencePoint.x + i * tileWidth, referencePoint.y, referencePoint.z + j * tileWidth);
+                            glVertex3f(referencePoint.x + (i + 1) * tileWidth, referencePoint.y, referencePoint.z + j * tileWidth);
+                            glVertex3f(referencePoint.x + (i + 1) * tileWidth, referencePoint.y, referencePoint.z + (j + 1) * tileWidth);
+                            glVertex3f(referencePoint.x + i * tileWidth, referencePoint.y, referencePoint.z + (j + 1) * tileWidth);
                         glEnd();
                     }
                 }
@@ -536,20 +536,22 @@ class Floor : public Object
         }
 
         double getIntersectingT(Ray ray) {
-            Point start = ray.start;
+            // y is the up direction
+            Point origin = ray.origin;
             Point dir = ray.dir;
 
-            double t = -start.z / dir.z;
+            double t = -origin.y / dir.y;
 
             if (t < 0) {
                 return -1;
             }
 
             // calculate the intersection point
-            Point intersectionPoint = start + dir * t;
+            Point intersectionPoint = origin + dir * t;
 
             // check if the intersection point is within the floor
-            if (intersectionPoint.x < 0 || intersectionPoint.x > tileWidth * tileNumber || intersectionPoint.y < 0 || intersectionPoint.y > tileWidth * tileNumber) {
+            if (intersectionPoint.x < -tileWidth * tileNumber / 2 || intersectionPoint.x > tileWidth * tileNumber / 2 ||
+                intersectionPoint.z < -tileWidth * tileNumber / 2 || intersectionPoint.z > tileWidth * tileNumber / 2) {
                 return -1;
             }
 
@@ -566,10 +568,10 @@ class Floor : public Object
 
         Color getColor(Point intersectionPoint) {
             // Find if the point is in black or white tile
-            int x = intersectionPoint.x / tileWidth;
-            int y = intersectionPoint.y / tileWidth;
+            int x = (intersectionPoint.x + tileWidth * tileNumber / 2) / tileWidth;
+            int z = (intersectionPoint.z + tileWidth * tileNumber / 2) / tileWidth;
 
-            if ((x + y) % 2 == 0) {
+            if ((x + z) % 2 == 0) {
                 return Color(1, 1, 1);
             } else {
                 return Color(0, 0, 0);
@@ -643,15 +645,15 @@ class Cube : public Object {
         }
 
         double getIntersectingT(Ray ray) {
-            Point start = ray.start;
+            Point origin = ray.origin;
             Point dir = ray.dir;
 
-            double t1 = (lowerLeft.x - start.x) / dir.x;
-            double t2 = (lowerLeft.x + side - start.x) / dir.x;
-            double t3 = (lowerLeft.y - start.y) / dir.y;
-            double t4 = (lowerLeft.y + side - start.y) / dir.y;
-            double t5 = (lowerLeft.z - start.z) / dir.z;
-            double t6 = (lowerLeft.z + side - start.z) / dir.z;
+            double t1 = (lowerLeft.x - origin.x) / dir.x;
+            double t2 = (lowerLeft.x + side - origin.x) / dir.x;
+            double t3 = (lowerLeft.y - origin.y) / dir.y;
+            double t4 = (lowerLeft.y + side - origin.y) / dir.y;
+            double t5 = (lowerLeft.z - origin.z) / dir.z;
+            double t6 = (lowerLeft.z + side - origin.z) / dir.z;
 
             double tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
             double tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
@@ -810,28 +812,10 @@ class Pyramid : public Object {
         }
 
         double getIntersectingT(Ray ray) {
-            Point start = ray.start;
+            Point origin = ray.origin;
             Point dir = ray.dir;
 
-            double t1 = (lowerLeft.x - start.x) / dir.x;
-            double t2 = (lowerLeft.x + width - start.x) / dir.x;
-            double t3 = (lowerLeft.y - start.y) / dir.y;
-            double t4 = (lowerLeft.y + width - start.y) / dir.y;
-            double t5 = (lowerLeft.z - start.z) / dir.z;
-            double t6 = (lowerLeft.z + width - start.z) / dir.z;
 
-            double tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-            double tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
-
-            if (tmax < 0) {
-                return -1;
-            }
-
-            if (tmin > tmax) {
-                return -1;
-            }
-
-            return tmin;
         }
 
         Point getNormal(Point intersectionPoint) {

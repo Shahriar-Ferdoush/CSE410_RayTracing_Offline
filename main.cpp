@@ -58,10 +58,12 @@ void takeInputs() {
     is >> noOfPixels;
 
     // Handle Checkerbord Input
-    is >> checkerBoard;
+    // is >> checkerBoard;
+    Object* obj = new Floor();
+    is >> *((Floor*) obj);
 
     // Push the checkerboard in the objects vector
-    // objects.push_back(checkerBoard);
+    objects.push_back(obj);
 
 
     // Input Objects
@@ -86,6 +88,11 @@ void takeInputs() {
         }
 
         objects.push_back(object);
+    }
+
+    // Print all objects
+    for(int i = 0; i < objects.size(); i++) {
+        objects[i]->print();
     }
 
     // Input Lights
@@ -190,14 +197,10 @@ void capture() {
                     nearestObjectT = currentObjectT;
                     nearestObjectIndex = k;
                 }
-                if(nearestObjectIndex == 1) {
-                    cout << "here" << endl;
-                }
-
             }
 
             if(nearestObjectIndex != -1) {
-                Point intersection = ray.start + ray.dir*nearestObjectT;
+                Point intersection = ray.origin + ray.dir*nearestObjectT;
                 color = objects[nearestObjectIndex]->getColor(intersection);
 
                 image.set_pixel(j, i, color.r * 255, color.g * 255, color.b * 255);
@@ -243,10 +246,10 @@ void display() {
     drawAxes();
 
     // Draw a Floor
-    checkerBoard.draw();
+    // checkerBoard.draw();
 
     // Draw All the Objects
-    for(int i = 0; i < noOfObjects; i++) {
+    for(int i = 0; i < objects.size(); i++) {
         objects[i]->draw();
     }
 
