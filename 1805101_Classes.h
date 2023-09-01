@@ -4,6 +4,7 @@
 #include "bitmap_image.hpp"
 
 #define PI (2*acos(0.0))
+#define EPSILON 1e-6
 
 using namespace std;
 
@@ -406,8 +407,11 @@ class Object
             Point intersectionPoint = ray.origin + ray.dir * t;
             Color rawColor = getColor(intersectionPoint);
 
+    
             // Ambient
-            color = rawColor * coEfficients[0];
+            color.r = rawColor.r * coEfficients[0];
+            color.g = rawColor.g * coEfficients[0];
+            color.b = rawColor.b * coEfficients[0];
 
             // For each light source
             for (int i = 0; i < lights.size(); i++) {
@@ -417,13 +421,16 @@ class Object
                 Point rayDirection = lightPos - intersectionPoint;
                 rayDirection.normalize();
 
-                Ray lightRay(intersectionPoint, rayDirection);
+                Ray lightRay(intersectionPoint + rayDirection * EPSILON, rayDirection);
                 Point normal = getNormal(intersectionPoint);
+
+                // distance from light source and lightRay source
+                double distance = (lightPos - lightRay.origin).length();
 
                 bool isShadow = false;
                 for (int j = 0; j < objects.size(); j++) {
                     double t = objects[j]->getIntersectingT(lightRay);
-                    if (t > 0) {
+                    if (t > 0 && t < distance) {
                         isShadow = true;
                         break;
                     }
@@ -438,32 +445,33 @@ class Object
 
                     double phong = max(0.0, reflectedRay.dir * ray.dir);
 
-                    color = color + (rawColor * light->color) * (lambert * coEfficients[1] + pow(phong, shine) * coEfficients[2]);
+                    color.r += lambert * rawColor.r * coEfficients[1] * light->color.r + pow(phong, shine) * coEfficients[2] * light->color.r;
+                    color.g += lambert * rawColor.g * coEfficients[1] * light->color.g + pow(phong, shine) * coEfficients[2] * light->color.g;
+                    color.b += lambert * rawColor.b * coEfficients[1] * light->color.b + pow(phong, shine) * coEfficients[2] * light->color.b;
                 }
             }
 
-            // Spotlights
-
+            // Spot Light
             for (int i = 0; i < spotLights.size(); i++) {
-                SpotLight* sLight = spotLights[i];
-                Point lightPos = sLight->pos;
+                SpotLight* spotLight = spotLights[i];
+                Point lightPos = spotLight->pos;
 
                 Point rayDirection = lightPos - intersectionPoint;
                 rayDirection.normalize();
 
-                double dotProduct = rayDirection * sLight->lookAt;
-                double angle = acos(dotProduct / (rayDirection.length() * sLight->lookAt.length())) * 180 / PI;
+                double angle = acos((rayDirection * spotLight->lookAt) / (rayDirection.length() * spotLight->lookAt.length())) * 180 / PI;
 
-                if (angle <= sLight->cutoffAngle) {
-                    Ray lightRay(intersectionPoint, rayDirection);
+                if(angle <= spotLight->cutoffAngle) {
+                    Ray lightRay(intersectionPoint + rayDirection * EPSILON, rayDirection);
                     Point normal = getNormal(intersectionPoint);
 
-                    Ray reflectedRay(intersectionPoint, rayDirection - normal * 2 * (rayDirection * normal));
+                    // distance from light source and lightRay source
+                    double distance = (lightPos - lightRay.origin).length();
 
                     bool isShadow = false;
                     for (int j = 0; j < objects.size(); j++) {
                         double t = objects[j]->getIntersectingT(lightRay);
-                        if (t > 0) {
+                        if (t > 0 && t < distance) {
                             isShadow = true;
                             break;
                         }
@@ -472,9 +480,46 @@ class Object
                     if (!isShadow) {
                         // Diffuse
                         double lambert = max(0.0, lightRay.dir * normal);
+
+                        Ray reflectedRay(intersectionPoint, rayDirection - normal * 2 * (rayDirection * normal));
+                        reflectedRay.dir.normalize();
+
                         double phong = max(0.0, reflectedRay.dir * ray.dir);
 
-                        color = color + (rawColor * sLight->color) * (lambert * coEfficients[1] + pow(phong, shine) * coEfficients[2]);
+                        color.r += lambert * rawColor.r * coEfficients[1] * spotLight->color.r + pow(phong, shine) * coEfficients[2] * spotLight->color.r;
+                        color.g += lambert * rawColor.g * coEfficients[1] * spotLight->color.g + pow(phong, shine) * coEfficients[2] * spotLight->color.g;
+                        color.b += lambert * rawColor.b * coEfficients[1] * spotLight->color.b + pow(phong, shine) * coEfficients[2] * spotLight->color.b;
+                    }
+                }
+            }
+
+            // Reflection
+            if(level < recursionLevel) {
+                Point normal = getNormal(intersectionPoint);
+                Ray reflectedRay(intersectionPoint, ray.dir - normal * 2 * (ray.dir * normal));
+                reflectedRay.dir.normalize();
+
+                reflectedRay.origin = reflectedRay.origin + reflectedRay.dir * EPSILON;
+
+                double tMin = INT_MAX;
+                int nearest = -1;
+
+                for (int i = 0; i < objects.size(); i++) {
+                    double t = objects[i]->getIntersectingT(reflectedRay);
+                    if (t > 0 && t < tMin) {
+                        tMin = t;
+                        nearest = i;
+                    }
+                }
+
+                if (nearest != -1) {
+                    Color reflectedColor;
+                    double t = objects[nearest]->getRayTraced(reflectedRay, level + 1, reflectedColor);
+
+                    if (t > 0 && t < INT_MAX) {
+                        color.r += reflectedColor.r * coEfficients[3];
+                        color.g += reflectedColor.g * coEfficients[3];
+                        color.b += reflectedColor.b * coEfficients[3];
                     }
                 }
             }
@@ -677,11 +722,12 @@ class Floor : public Object
         }
 
         Point getNormal(Point intersectionPoint) {
-            if (intersectionPoint.y >= 0) {
-                return Point(0, 1, 0);
-            } else {
-                return Point(0, -1, 0);
-            }
+            // if (intersectionPoint.y >= 0) {
+            //     return Point(0, 1, 0);
+            // } else {
+            //     return Point(0, -1, 0);
+            // }
+            return Point(0, 1, 0);
         }
 
         Color getColor(Point intersectionPoint) {
@@ -1012,24 +1058,6 @@ class Pyramid : public Object {
             Point dir = ray.dir;
 
             double tmin = -1;
-
-            // double t1 = (lowerLeft.x - origin.x) / dir.x;
-            // double t2 = (lowerLeft.x + width - origin.x) / dir.x;
-            // double t3 = (lowerLeft.y - origin.y) / dir.y;
-            // double t4 = (lowerLeft.y + width - origin.y) / dir.y;
-            // double t5 = (lowerLeft.z - origin.z) / dir.z;
-            // double t6 = (lowerLeft.z + width - origin.z) / dir.z;
-
-            // double tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-            // double tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
-
-            // if (tmax < 0) {
-            //     return -1;
-            // }
-
-            // if (tmin > tmax) {
-            //     return -1;
-            // }
 
             Triangle face1 = Triangle(lowerLeft, Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2));
             Triangle face2 = Triangle(lowerLeft, Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2));
