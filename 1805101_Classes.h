@@ -786,33 +786,41 @@ class Triangle : public Object {
             Point origin = ray.origin;
             Point dir = ray.dir;
 
-            Point normal = Point(0, 1, 0);
+            double AMatrix[3][3] = {
+                {a.x - b.x, a.x - c.x, dir.x},
+                {a.y - b.y, a.y - c.y, dir.y},
+                {a.z - b.z, a.z - c.z, dir.z}
+            };
 
-            double t = (normal * (a - origin)) / (normal * dir);
+            double betaMatrix[3][3] = {
+                {a.x - origin.x, a.x - c.x, dir.x},
+                {a.y - origin.y, a.y - c.y, dir.y},
+                {a.z - origin.z, a.z - c.z, dir.z}
+            };
 
-            if (t < 0) {
+            double gammaMatrix[3][3] = {
+                {a.x - b.x, a.x - origin.x, dir.x},
+                {a.y - b.y, a.y - origin.y, dir.y},
+                {a.z - b.z, a.z - origin.z, dir.z}
+            };
+
+            double tMatrix[3][3] = {
+                {a.x - b.x, a.x - c.x, a.x - origin.x},
+                {a.y - b.y, a.y - c.y, a.y - origin.y},
+                {a.z - b.z, a.z - c.z, a.z - origin.z}
+            };
+
+
+            double A = determinant(AMatrix);
+            double beta = determinant(betaMatrix) / A;
+            double gamma = determinant(gammaMatrix) / A;
+            double t = determinant(tMatrix) / A;
+
+            if (beta >= 0 && gamma >= 0 && beta + gamma <= 1 && t > 0) {
+                return t;
+            } else {
                 return -1;
             }
-
-            Point intersectionPoint = origin + dir * t;
-
-            Point ab = b - a;
-            Point bc = c - b;
-            Point ca = a - c;
-
-            Point ap = intersectionPoint - a;
-            Point bp = intersectionPoint - b;
-            Point cp = intersectionPoint - c;
-
-            Point cross1 = (ab^ap);
-            Point cross2 = (bc^bp);
-            Point cross3 = (ca^cp);
-
-            if ((cross1*cross2) >= 0 && (cross2*cross3) >= 0) {
-                return t;
-            }
-
-            return -1;
         }
 };
 
@@ -883,50 +891,22 @@ class Pyramid : public Object {
             Point origin = ray.origin;
             Point dir = ray.dir;
 
-            // declare all the four Triangles
-            Triangle t1 = Triangle(lowerLeft, lowerLeft + Point(width, 0, 0), lowerLeft + Point(width / 2, height, width / 2), color);
-            Triangle t2 = Triangle(lowerLeft, lowerLeft + Point(0, 0, width), lowerLeft + Point(width / 2, height, width / 2), color);
-            Triangle t3 = Triangle(lowerLeft + Point(0, 0, width), lowerLeft + Point(width, 0, width), lowerLeft + Point(width / 2, height, width / 2), color);
-            Triangle t4 = Triangle(lowerLeft + Point(width, 0, 0), lowerLeft + Point(width, 0, width), lowerLeft + Point(width / 2, height, width / 2), color);
+            double t1 = (lowerLeft.x - origin.x) / dir.x;
+            double t2 = (lowerLeft.x + width - origin.x) / dir.x;
+            double t3 = (lowerLeft.y - origin.y) / dir.y;
+            double t4 = (lowerLeft.y + width - origin.y) / dir.y;
+            double t5 = (lowerLeft.z - origin.z) / dir.z;
+            double t6 = (lowerLeft.z + width - origin.z) / dir.z;
 
-            double tmin = -1;
+            double tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+            double tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
 
-            // Intersection with the base
-
-            Point normal = Point(0, -1, 0);
-
-            double t = (normal* (lowerLeft - origin)) / (normal* dir);
-
-            if (t >= 0) {
-                Point intersectionPoint = origin + dir * t;
-
-                if (intersectionPoint.x >= lowerLeft.x && intersectionPoint.x <= lowerLeft.x + width && intersectionPoint.z >= lowerLeft.z && intersectionPoint.z <= lowerLeft.z + width) {
-                    tmin = t;
-                }
+            if (tmax < 0) {
+                return -1;
             }
 
-            // Intersection with the four triangles
-            double iT1 = t1.getIntersectingT(ray);
-            double iT2 = t2.getIntersectingT(ray);
-            double iT3 = t3.getIntersectingT(ray);
-            double iT4 = t4.getIntersectingT(ray);
-
-            // Find the minimum positive t
-
-            if (iT1 >= 0 && (tmin == -1 || iT1 < tmin)) {
-                tmin = iT1;
-            }
-
-            if (iT2 >= 0 && (tmin == -1 || iT2 < tmin)) {
-                tmin = iT2;
-            }
-
-            if (iT3 >= 0 && (tmin == -1 || iT3 < tmin)) {
-                tmin = iT3;
-            }
-
-            if (iT4 >= 0 && (tmin == -1 || iT4 < tmin)) {
-                tmin = iT4;
+            if (tmin > tmax) {
+                return -1;
             }
 
             return tmin;
@@ -972,3 +952,4 @@ class Pyramid : public Object {
             cout << "Shine : " << shine << endl;
         }
 };
+
