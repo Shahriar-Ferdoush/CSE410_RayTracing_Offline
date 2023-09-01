@@ -988,6 +988,16 @@ class Triangle : public Object {
                 return -1;
             }
         }
+
+        Point getNormal(Point intersectionPoint) {
+            Point normal = (b - a) ^ (c - a);
+            normal.normalize();
+            return normal;
+        }
+
+        Color getColor(Point intersectionPoint) {
+            return color;
+        }
 };
 
 class Pyramid : public Object {
@@ -1002,55 +1012,47 @@ class Pyramid : public Object {
     public:
         Point lowerLeft;
         double width, height;
+        Triangle triangles[6];
 
         Pyramid() {
             lowerLeft = Point(0, 0, 0);
             width = height = 1;
             color = Color();
+
+            initializeTriangles();
         }
 
-        Pyramid(Point lowerLeft, double width, double height, Color color) : lowerLeft(lowerLeft), width(width), height(height), Object(color, NULL, 0) {}
+        Pyramid(Point lowerLeft, double width, double height) : lowerLeft(lowerLeft), width(width), height(height) {
+            initializeTriangles();
+        }
 
-        Pyramid(Point lowerLeft, double width, double height, Color color, double coEfficients[4], double shine) : lowerLeft(lowerLeft), width(width), height(height), Object(color, coEfficients, shine) {}
+        Pyramid(Point lowerLeft, double width, double height, Color color, double coEfficients[4], double shine) : lowerLeft(lowerLeft), width(width), height(height) {
+            this->color = color;
+            this->shine = shine;
+            for (int i = 0; i < 4; i++) {
+                this->coEfficients[i] = coEfficients[i];
+            }
 
-        Pyramid(Point lowerLeft, double width, double height, Color color, double coEfficients[4], double shine, bitmap_image texture) : lowerLeft(lowerLeft), width(width), height(height), Object(color, coEfficients, shine, texture) {}
+            initializeTriangles();
+        }
+
+        void initializeTriangles() {
+            // Four triangles for the sides of the pyramid taking the lower left point as the origin
+            triangles[0] = Triangle(lowerLeft, Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2), color, coEfficients, shine);
+            triangles[1] = Triangle(lowerLeft, Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2), color, coEfficients, shine);
+            triangles[2] = Triangle(Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2), color, coEfficients, shine);
+            triangles[3] = Triangle(Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2), color, coEfficients, shine);
+
+            // Two triangles for the base of the pyramid
+            triangles[4] = Triangle(lowerLeft, Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + width), color, coEfficients, shine);
+            triangles[5] = Triangle(Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z), color, coEfficients, shine);
+        }
+
 
         void draw() {
-            glPushMatrix();
-                glTranslatef(lowerLeft.x, lowerLeft.y, lowerLeft.z);
-                glColor3f(color.r, color.g, color.b);
-                glBegin(GL_TRIANGLES);
-                    // glColor3f(1, 0, 0);
-                    glVertex3f(0, 0, 0);
-                    glVertex3f(width, 0, 0);
-                    glVertex3f(width / 2, height, width / 2);
-
-                    // glColor3f(0, 1, 0);
-                    glVertex3f(0, 0, 0);
-                    glVertex3f(0, 0, width);
-                    glVertex3f(width / 2, height, width / 2);
-
-                    // glColor3f(0, 0, 1);
-                    glVertex3f(0, 0, width);
-                    glVertex3f(width, 0, width);
-                    glVertex3f(width / 2, height, width / 2);
-
-                    // glColor3f(1, 1, 0);
-                    glVertex3f(width, 0, 0);
-                    glVertex3f(width, 0, width);
-                    glVertex3f(width / 2, height, width / 2);
-                glEnd();
-
-                glBegin(GL_QUADS);
-                    // glColor3f(1, 0, 1);
-                    glVertex3f(0, 0, 0);
-                    glVertex3f(width, 0, 0);
-                    glVertex3f(width, 0, width);
-                    glVertex3f(0, 0, width);
-                glEnd();
-
-            glPopMatrix();
-            glEnd();
+            for (int i = 0; i < 6; i++) {
+                triangles[i].draw();
+            }
         }
 
         double getIntersectingT(Ray ray) {
@@ -1140,6 +1142,8 @@ class Pyramid : public Object {
                 input >> pyramid.coEfficients[i];
             }
             input >> pyramid.shine;
+
+            pyramid.initializeTriangles();
             return input;
         };
 

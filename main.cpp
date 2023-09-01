@@ -72,21 +72,92 @@ void takeInputs() {
         string objectType;
         is >> objectType;
 
-        Object* object;
         if(objectType == "sphere") {
+            Object* object;
             object = new Sphere();
             is >> *((Sphere*) object);
+            objects.push_back(object);
         }
         else if(objectType == "pyramid") {
-            object = new Pyramid();
-            is >> *((Pyramid*) object);
+            // -40.0 0.0 5.0    	lowest point co-ordinate
+            // 30.0 40.0        	width height
+            // 1.0 0.0 0.0      	color
+            // 0.4 0.2 0.0 0.4  	ambient diffuse specular reflection coefficient
+            // 1		 	shininess
+            Point lowerLeft;
+            double width, height;
+            Color color;
+            double coEfficients[4];
+            double shine;
+
+            is >> lowerLeft >> width >> height >> color;
+            for(int i = 0; i < 4; i++) {
+                is >> coEfficients[i];
+            }
+            is >> shine;
+
+            // Create four face triangles
+            Object* object[6];
+
+            object[0] = new Triangle(lowerLeft, Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2), color, coEfficients, shine);
+            object[1] = new Triangle(lowerLeft, Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2), color, coEfficients, shine);
+            object[2] = new Triangle(Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2), color, coEfficients, shine);
+            object[3] = new Triangle(Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width / 2, lowerLeft.y + height, lowerLeft.z + width / 2), color, coEfficients, shine);
+
+            // Two triangles for the base of the pyramid
+            object[4] = new Triangle(lowerLeft, Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + width), color, coEfficients, shine);
+            object[5] = new Triangle(Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + width), Point(lowerLeft.x + width, lowerLeft.y, lowerLeft.z), color, coEfficients, shine);
+
+            for(int i = 0; i < 6; i++) {
+                objects.push_back(object[i]);
+            }
         }
         else if(objectType == "cube") {
-            object = new Cube();
-            is >> *((Cube*) object);
+            // cube
+            // -100 -100 10		bottom lower left point
+            // 40.0			side
+            // 0.0 0.5 1.0		color
+            // 0.15 0.1 0.4 0.45	ambient diffuse specular reflection coefficient
+            // 10			shininess
+
+            Point lowerLeft;
+            double side;
+            Color color;
+            double coEfficients[4];
+            double shine;
+
+            is >> lowerLeft >> side >> color;
+            for(int i = 0; i < 4; i++) {
+                is >> coEfficients[i];
+            }
+            is >> shine;
+
+            // Create 12 triangles for six faces of the cube
+            Object* object[12];
+
+            object[0] = new Triangle(lowerLeft, Point(lowerLeft.x + side, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x, lowerLeft.y + side, lowerLeft.z), color, coEfficients, shine);
+            object[1] = new Triangle(Point(lowerLeft.x + side, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x + side, lowerLeft.y + side, lowerLeft.z), Point(lowerLeft.x, lowerLeft.y + side, lowerLeft.z), color, coEfficients, shine);
+
+            object[2] = new Triangle(Point(lowerLeft.x + side, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x + side, lowerLeft.y, lowerLeft.z + side), Point(lowerLeft.x + side, lowerLeft.y + side, lowerLeft.z), color, coEfficients, shine);
+            object[3] = new Triangle(Point(lowerLeft.x + side, lowerLeft.y + side, lowerLeft.z), Point(lowerLeft.x + side, lowerLeft.y, lowerLeft.z + side), Point(lowerLeft.x + side, lowerLeft.y + side, lowerLeft.z + side), color, coEfficients, shine);
+
+            object[4] = new Triangle(Point(lowerLeft.x + side, lowerLeft.y, lowerLeft.z + side), Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + side), Point(lowerLeft.x + side, lowerLeft.y + side, lowerLeft.z + side), color, coEfficients, shine);
+            object[5] = new Triangle(Point(lowerLeft.x, lowerLeft.y + side, lowerLeft.z + side), Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + side), Point(lowerLeft.x + side, lowerLeft.y + side, lowerLeft.z + side), color, coEfficients, shine);
+
+            object[6] = new Triangle(Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + side), lowerLeft, Point(lowerLeft.x, lowerLeft.y + side, lowerLeft.z + side), color, coEfficients, shine);
+            object[7] = new Triangle(lowerLeft, Point(lowerLeft.x, lowerLeft.y + side, lowerLeft.z + side), Point(lowerLeft.x, lowerLeft.y + side, lowerLeft.z), color, coEfficients, shine);
+
+            object[8] = new Triangle(lowerLeft, Point(lowerLeft.x + side, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + side), color, coEfficients, shine);
+            object[9] = new Triangle(Point(lowerLeft.x + side, lowerLeft.y, lowerLeft.z), Point(lowerLeft.x + side, lowerLeft.y, lowerLeft.z + side), Point(lowerLeft.x, lowerLeft.y, lowerLeft.z + side), color, coEfficients, shine);
+
+            object[10] = new Triangle(Point(lowerLeft.x + side, lowerLeft.y + side, lowerLeft.z), Point(lowerLeft.x, lowerLeft.y + side, lowerLeft.z), Point(lowerLeft.x, lowerLeft.y + side, lowerLeft.z + side), color, coEfficients, shine);
+            object[11] = new Triangle(Point(lowerLeft.x + side, lowerLeft.y + side, lowerLeft.z), Point(lowerLeft.x, lowerLeft.y + side, lowerLeft.z + side), Point(lowerLeft.x + side, lowerLeft.y + side, lowerLeft.z + side), color, coEfficients, shine);
+
+            for(int i = 0; i < 12; i++) {
+                objects.push_back(object[i]);
+            }
         }
 
-        objects.push_back(object);
     }
 
     // Print all objects
@@ -386,7 +457,7 @@ void specialKeyListener(int key, int x,int y)
 
 
 int main(int argc, char** argv) {
-    pos.x=0;pos.y=30;pos.z=200;
+    pos.x=0;pos.y=30;pos.z=80;
 
     l.x=0;l.y=0;l.z=-1;
     u.x=0;u.y=1;u.z=0;
