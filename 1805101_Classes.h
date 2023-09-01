@@ -748,6 +748,74 @@ class Cube : public Object {
         }
 };
 
+double determinant(double a[3][3]) {
+    double det = 0;
+    for (int i = 0; i < 3; i++) {
+        det += a[0][i] * (a[1][(i + 1) % 3] * a[2][(i + 2) % 3] - a[1][(i + 2) % 3] * a[2][(i + 1) % 3]);
+    }
+    return det;
+}
+
+class Triangle : public Object {
+    public:
+        Point a, b, c;
+
+        Triangle() {
+            a = Point(0, 0, 0);
+            b = Point(0, 0, 0);
+            c = Point(0, 0, 0);
+            color = Color();
+        }
+
+        Triangle(Point a, Point b, Point c, Color color) : a(a), b(b), c(c), Object(color, NULL, 0) {}
+
+        Triangle(Point a, Point b, Point c, Color color, double coEfficients[4], double shine) : a(a), b(b), c(c), Object(color, coEfficients, shine) {}
+
+        Triangle(Point a, Point b, Point c, Color color, double coEfficients[4], double shine, bitmap_image texture) : a(a), b(b), c(c), Object(color, coEfficients, shine, texture) {}
+
+        void draw() {
+            glColor3f(color.r, color.g, color.b);
+            glBegin(GL_TRIANGLES);
+                glVertex3f(a.x, a.y, a.z);
+                glVertex3f(b.x, b.y, b.z);
+                glVertex3f(c.x, c.y, c.z);
+            glEnd();
+        }
+
+        double getIntersectingT(Ray ray) {
+            Point origin = ray.origin;
+            Point dir = ray.dir;
+
+            Point normal = Point(0, 1, 0);
+
+            double t = (normal * (a - origin)) / (normal * dir);
+
+            if (t < 0) {
+                return -1;
+            }
+
+            Point intersectionPoint = origin + dir * t;
+
+            Point ab = b - a;
+            Point bc = c - b;
+            Point ca = a - c;
+
+            Point ap = intersectionPoint - a;
+            Point bp = intersectionPoint - b;
+            Point cp = intersectionPoint - c;
+
+            Point cross1 = (ab^ap);
+            Point cross2 = (bc^bp);
+            Point cross3 = (ca^cp);
+
+            if ((cross1*cross2) >= 0 && (cross2*cross3) >= 0) {
+                return t;
+            }
+
+            return -1;
+        }
+};
+
 class Pyramid : public Object {
     // This is the pyramid info input signature
     // pyramid
@@ -815,7 +883,53 @@ class Pyramid : public Object {
             Point origin = ray.origin;
             Point dir = ray.dir;
 
+            // declare all the four Triangles
+            Triangle t1 = Triangle(lowerLeft, lowerLeft + Point(width, 0, 0), lowerLeft + Point(width / 2, height, width / 2), color);
+            Triangle t2 = Triangle(lowerLeft, lowerLeft + Point(0, 0, width), lowerLeft + Point(width / 2, height, width / 2), color);
+            Triangle t3 = Triangle(lowerLeft + Point(0, 0, width), lowerLeft + Point(width, 0, width), lowerLeft + Point(width / 2, height, width / 2), color);
+            Triangle t4 = Triangle(lowerLeft + Point(width, 0, 0), lowerLeft + Point(width, 0, width), lowerLeft + Point(width / 2, height, width / 2), color);
 
+            double tmin = -1;
+
+            // Intersection with the base
+
+            Point normal = Point(0, -1, 0);
+
+            double t = (normal* (lowerLeft - origin)) / (normal* dir);
+
+            if (t >= 0) {
+                Point intersectionPoint = origin + dir * t;
+
+                if (intersectionPoint.x >= lowerLeft.x && intersectionPoint.x <= lowerLeft.x + width && intersectionPoint.z >= lowerLeft.z && intersectionPoint.z <= lowerLeft.z + width) {
+                    tmin = t;
+                }
+            }
+
+            // Intersection with the four triangles
+            double iT1 = t1.getIntersectingT(ray);
+            double iT2 = t2.getIntersectingT(ray);
+            double iT3 = t3.getIntersectingT(ray);
+            double iT4 = t4.getIntersectingT(ray);
+
+            // Find the minimum positive t
+
+            if (iT1 >= 0 && (tmin == -1 || iT1 < tmin)) {
+                tmin = iT1;
+            }
+
+            if (iT2 >= 0 && (tmin == -1 || iT2 < tmin)) {
+                tmin = iT2;
+            }
+
+            if (iT3 >= 0 && (tmin == -1 || iT3 < tmin)) {
+                tmin = iT3;
+            }
+
+            if (iT4 >= 0 && (tmin == -1 || iT4 < tmin)) {
+                tmin = iT4;
+            }
+
+            return tmin;
         }
 
         Point getNormal(Point intersectionPoint) {
@@ -858,4 +972,3 @@ class Pyramid : public Object {
             cout << "Shine : " << shine << endl;
         }
 };
-

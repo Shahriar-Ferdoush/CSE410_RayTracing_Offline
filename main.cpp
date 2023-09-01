@@ -205,25 +205,6 @@ void capture() {
 
                 image.set_pixel(j, i, color.r * 255, color.g * 255, color.b * 255);
             }
-            
-
-            // // Calculate the intersection point of the ray with the first object
-            // double intersectingT = objects[0]->getIntersectingT(ray);
-            // Point intersection = ray.start + ray.dir*intersectingT;
-
-            // // Calculate the color of the pixel
-            // Color color = objects[0]->getColor(intersection);
-
-            // // Print color value in a file
-            // ofstream myfile;
-            // myfile.open ("example.txt", ios::app);
-            // // print color value in exists and if not use a tab
-            // if (myfile.is_open())
-            // {
-            //     myfile << color.r << "\t" << color.g << "\t" << color.b << "\t";
-            //     myfile.close();
-            // }
-            // else cout << "Unable to open file";
 
             // Set the color of the pixel
             image.set_pixel(j, i, color.r * 255, color.g * 255, color.b * 255);
