@@ -1,7 +1,6 @@
 // #include <windows.h>
 #include <GL/glut.h>
 #include <cmath>
-#include "Cubesphere.cpp"
 #include "1805101_Classes.h"
 
 using namespace std;
