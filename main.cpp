@@ -160,11 +160,6 @@ void takeInputs() {
 
     }
 
-    // Print all objects
-    for(int i = 0; i < objects.size(); i++) {
-        objects[i]->print();
-    }
-
     // Input Lights
     is >> noOfLights;
 
@@ -398,6 +393,11 @@ void keyboardListener(unsigned char key, int x, int y) {
 			r.y = r.y*cos(-rate)-u.y*sin(-rate);
 			r.z = r.z*cos(-rate)-u.z*sin(-rate);
 			break;
+
+        case ' ':
+            for(int i = 0; i < objects.size(); i++) {
+                objects[i]->setTexture();
+            }
 
 		default:
 			break;

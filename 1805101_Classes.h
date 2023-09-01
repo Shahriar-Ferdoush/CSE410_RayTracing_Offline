@@ -380,6 +380,10 @@ class Object
             isTexture = true;
         }
 
+        void setTexture() {
+            this->isTexture = !this->isTexture;
+        }
+
 
         // --------------- Virutal Functions ---------------
         virtual void draw() {}
@@ -619,23 +623,7 @@ class Sphere : public Object
         }
 
         Color getColor(Point intersectionPoint) {
-            if (!isTexture) {
-                return color;
-            }
-
-            double theta = acos((intersectionPoint.z - center.z) / radius);
-            double phi = atan2(intersectionPoint.y - center.y, intersectionPoint.x - center.x);
-
-            double u = (phi + PI) / (2 * PI);
-            double v = (PI - theta) / PI;
-
-            int x = u * texture.width();
-            int y = v * texture.height();
-
-            unsigned char r, g, b;
-            texture.get_pixel(x, y, r, g, b);
-
-            return Color(r, g, b);
+            return color;
         }
 
         void print() {
@@ -672,10 +660,47 @@ class Floor : public Object
     public:
         double tileWidth;
         int tileNumber;
+        vector<vector<Color> > buffer_b;
+        vector<vector<Color> > buffer_w;
 
         Floor() {
             tileWidth = 10;
             tileNumber = 100;
+
+            bitmap_image texture_b("texture_b.bmp");
+            bitmap_image texture_w("texture_w.bmp");
+
+            buffer_b.resize(texture_b.width(), vector<Color>(texture_b.height()));
+            buffer_w.resize(texture_w.width(), vector<Color>(texture_w.height()));
+
+            for (int i = 0; i < texture_b.width(); i++) {
+                for (int j = 0; j < texture_b.height(); j++) {
+                    unsigned char r, g, b;
+                    texture_b.get_pixel(i, j, r, g, b);
+                    Color color(0, 0, 0);
+
+                    color.r = (double)r/255.0;
+                    color.g = (double)g/255.0;
+                    color.b = (double)b/255.0;
+
+                    buffer_b[j][i] = color;
+                }
+            }
+
+            for (int i = 0; i < texture_w.width(); i++) {
+                for (int j = 0; j < texture_w.height(); j++) {
+                    unsigned char r, g, b;
+                    texture_w.get_pixel(i, j, r, g, b);
+                    Color color(0, 0, 0);
+
+                    color.r = (double)r/255.0;
+                    color.g = (double)g/255.0;
+                    color.b = (double)b/255.0;
+
+                    buffer_w[j][i] = color;
+                }
+            }
+            
         }
 
         Floor(double tileWidth, double coEfficients[4]) {
@@ -685,6 +710,41 @@ class Floor : public Object
             this->coEfficients[2] = coEfficients[2];
             this->coEfficients[3] = coEfficients[3];
             isTexture = false;
+
+            bitmap_image texture_b("texture_b.bmp");
+            bitmap_image texture_w("texture_w.bmp");
+
+            buffer_b.resize(texture_b.width(), vector<Color>(texture_b.height()));
+            buffer_w.resize(texture_w.width(), vector<Color>(texture_w.height()));
+
+            for (int i = 0; i < texture_b.width(); i++) {
+                for (int j = 0; j < texture_b.height(); j++) {
+                    unsigned char r, g, b;
+                    texture_b.get_pixel(i, j, r, g, b);
+                    Color color(0, 0, 0);
+
+                    color.r = (double)r/255.0;
+                    color.g = (double)g/255.0;
+                    color.b = (double)b/255.0;
+
+                    buffer_b[j][i] = color;
+                }
+            }
+
+            for (int i = 0; i < texture_w.width(); i++) {
+                for (int j = 0; j < texture_w.height(); j++) {
+                    unsigned char r, g, b;
+                    texture_w.get_pixel(i, j, r, g, b);
+                    Color color(0, 0, 0);
+
+                    color.r = (double)r/255.0;
+                    color.g = (double)g/255.0;
+                    color.b = (double)b/255.0;
+
+                    buffer_w[j][i] = color;
+                }
+            }
+            
         }
 
         void draw() {
@@ -743,13 +803,37 @@ class Floor : public Object
 
         Color getColor(Point intersectionPoint) {
             // Find if the point is in black or white tile
-            int x = (intersectionPoint.x + tileWidth * tileNumber / 2) / tileWidth;
-            int z = (intersectionPoint.z + tileWidth * tileNumber / 2) / tileWidth;
+            int i = (intersectionPoint.x + tileWidth * tileNumber / 2) / tileWidth;
+            int j = (intersectionPoint.z + tileWidth * tileNumber / 2) / tileWidth;
 
-            if ((x + z) % 2 == 0) {
-                return Color(1, 1, 1);
+            if ((i + j) % 2 == 0) {
+                if(!isTexture) {
+                    return Color(1, 1, 1);
+                }
+                double x = intersectionPoint.x - tileWidth * floor(intersectionPoint.x / tileWidth);
+                double z = intersectionPoint.z - tileWidth * floor(intersectionPoint.z / tileWidth);
+
+                double dx = tileWidth / buffer_b.size();
+                double dz = tileWidth / buffer_b[0].size();
+
+                int xIndex = x / dx;
+                int zIndex = z / dz;
+
+                return buffer_w[xIndex][zIndex];
             } else {
-                return Color(0, 0, 0);
+                if(! isTexture) {
+                    return Color(0, 0, 0);
+                }
+                double x = intersectionPoint.x - tileWidth * floor(intersectionPoint.x / tileWidth);
+                double z = intersectionPoint.z - tileWidth * floor(intersectionPoint.z / tileWidth);
+
+                double dx = tileWidth / buffer_b.size();
+                double dz = tileWidth / buffer_b[0].size();
+
+                int xIndex = x / dx;
+                int zIndex = z / dz;
+
+                return buffer_b[xIndex][zIndex];
             }
         }
 
