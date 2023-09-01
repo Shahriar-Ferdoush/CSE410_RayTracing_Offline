@@ -386,7 +386,7 @@ class Object
 
         virtual double getIntersectingT(Ray ray) {}
 
-        virtual Point getNormal(Point intersectionPoint) {}
+        virtual Point getNormal(Point intersectionPoint, Ray ray) {}
 
         virtual Color getColor(Point intersectionPoint) {}
 
@@ -427,7 +427,7 @@ class Object
                 rayDirection.normalize();
 
                 Ray lightRay(intersectionPoint + rayDirection * EPSILON, rayDirection);
-                Point normal = getNormal(intersectionPoint);
+                Point normal = getNormal(intersectionPoint, ray);
 
                 // distance from light source and lightRay source
                 double distance = (lightPos - lightRay.origin).length();
@@ -468,7 +468,7 @@ class Object
 
                 if(angle <= spotLight->cutoffAngle) {
                     Ray lightRay(intersectionPoint + rayDirection * EPSILON, rayDirection);
-                    Point normal = getNormal(intersectionPoint);
+                    Point normal = getNormal(intersectionPoint, ray);
 
                     // distance from light source and lightRay source
                     double distance = (lightPos - lightRay.origin).length();
@@ -500,7 +500,7 @@ class Object
 
             // Reflection
             if(level < recursionLevel) {
-                Point normal = getNormal(intersectionPoint);
+                Point normal = getNormal(intersectionPoint, ray);
                 Ray reflectedRay(intersectionPoint, ray.dir - normal * 2 * (ray.dir * normal));
                 reflectedRay.dir.normalize();
 
@@ -607,9 +607,14 @@ class Sphere : public Object
             return min(t1, t2);
         }
 
-        Point getNormal(Point intersectionPoint) {
+        Point getNormal(Point intersectionPoint, Ray ray) {
             Point normal = intersectionPoint - center;
             normal.normalize();
+
+            // If the ray is inside the sphere, flip the normal
+            if (ray.dir * normal > 0) {
+                normal = normal * -1;
+            }
             return normal;
         }
 
@@ -726,13 +731,14 @@ class Floor : public Object
             return t;
         }
 
-        Point getNormal(Point intersectionPoint) {
-            // if (intersectionPoint.y >= 0) {
-            //     return Point(0, 1, 0);
-            // } else {
-            //     return Point(0, -1, 0);
-            // }
-            return Point(0, 1, 0);
+        Point getNormal(Point intersectionPoint, Ray ray) {
+            Point normal = Point(0, 1, 0);
+            
+            if (ray.dir * normal > 0) {
+                normal = normal * -1;
+            }
+
+            return normal;
         }
 
         Color getColor(Point intersectionPoint) {
@@ -856,9 +862,14 @@ class Triangle : public Object {
             }
         }
 
-        Point getNormal(Point intersectionPoint) {
+        Point getNormal(Point intersectionPoint, Ray ray) {
             Point normal = (b - a) ^ (c - a);
             normal.normalize();
+
+            if (ray.dir * normal > 0) {
+                normal = normal * -1;
+            }
+
             return normal;
         }
 
