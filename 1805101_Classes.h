@@ -447,12 +447,13 @@ class Object
 
                 if (!isShadow) {
                     // Diffuse
-                    double lambert = max(0.0, lightRay.dir * normal);
+                    double scalingFactor = exp(-1 * light->falloff * distance * distance);
+                    double lambert = max(0.0, lightRay.dir * normal) * scalingFactor;
 
                     Ray reflectedRay(intersectionPoint, rayDirection - normal * 2 * (rayDirection * normal));
                     reflectedRay.dir.normalize();
 
-                    double phong = max(0.0, reflectedRay.dir * ray.dir);
+                    double phong = max(0.0, reflectedRay.dir * ray.dir) * scalingFactor;
 
                     color.r += lambert * rawColor.r * coEfficients[1] * light->color.r + pow(phong, shine) * coEfficients[2] * light->color.r;
                     color.g += lambert * rawColor.g * coEfficients[1] * light->color.g + pow(phong, shine) * coEfficients[2] * light->color.g;
@@ -488,12 +489,13 @@ class Object
 
                     if (!isShadow) {
                         // Diffuse
-                        double lambert = max(0.0, lightRay.dir * normal);
+                        double scalingFactor = exp(-1 * spotLight->falloff * distance * distance);
+                        double lambert = max(0.0, lightRay.dir * normal) * scalingFactor;
 
                         Ray reflectedRay(intersectionPoint, rayDirection - normal * 2 * (rayDirection * normal));
                         reflectedRay.dir.normalize();
 
-                        double phong = max(0.0, reflectedRay.dir * ray.dir);
+                        double phong = max(0.0, reflectedRay.dir * ray.dir) * scalingFactor;
 
                         color.r += lambert * rawColor.r * coEfficients[1] * spotLight->color.r + pow(phong, shine) * coEfficients[2] * spotLight->color.r;
                         color.g += lambert * rawColor.g * coEfficients[1] * spotLight->color.g + pow(phong, shine) * coEfficients[2] * spotLight->color.g;
