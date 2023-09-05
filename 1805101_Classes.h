@@ -330,27 +330,27 @@ class Object
     public:
         Color color;
         Point referencePoint;
-        double coEfficients[4];
+        double coEfficients[5];
         double shine;
         bool isTexture;
         bitmap_image texture;
 
         Object() {
             color = Color();
-            coEfficients[0] = coEfficients[1] = coEfficients[2] = coEfficients[3] = 0;
+            coEfficients[0] = coEfficients[1] = coEfficients[2] = coEfficients[3] = coEfficients[4] = 0;   
             shine = 0;
             isTexture = false;
         }
 
-        Object(Color color, double coEfficients[4], double shine) : color(color), shine(shine) {
-            for (int i = 0; i < 4; i++) {
+        Object(Color color, double coEfficients[5], double shine) : color(color), shine(shine) {
+            for (int i = 0; i < 5; i++) {
                 this->coEfficients[i] = coEfficients[i];
             }
             isTexture = false;
         }
 
-        Object(Color color, double coEfficients[4], double shine, bitmap_image texture) : color(color), shine(shine), texture(texture) {
-            for (int i = 0; i < 4; i++) {
+        Object(Color color, double coEfficients[5], double shine, bitmap_image texture) : color(color), shine(shine), texture(texture) {
+            for (int i = 0; i < 5; i++) {
                 this->coEfficients[i] = coEfficients[i];
             }
             isTexture = true;
@@ -365,8 +365,8 @@ class Object
             this->referencePoint = referencePoint;
         }
 
-        void setCoEfficients(double coEfficients[4]) {
-            for (int i = 0; i < 4; i++) {
+        void setCoEfficients(double coEfficients[5]) {
+            for (int i = 0; i < 5; i++) {
                 this->coEfficients[i] = coEfficients[i];
             }
         }
@@ -535,6 +535,46 @@ class Object
                 }
             }
 
+            // Refraction
+            if(level < recursionLevel*2) {
+                Point normal = getNormal(intersectionPoint, ray);
+                double n1 = 1.0;
+                double n2 = 1.5;
+
+                double n = n1 / n2;
+                double cosI = -1 * (normal * ray.dir);
+                double sinT2 = n * n * (1.0 - cosI * cosI);
+
+                if(sinT2 <= 1) {
+                    Ray refractedRay;
+                    refractedRay.dir = (ray.dir * n) + (normal * (n * cosI - sqrt(1.0 - sinT2)));
+                    refractedRay.dir.normalize();
+                    refractedRay.origin = intersectionPoint + refractedRay.dir * EPSILON;
+
+                    double tMin = INT_MAX;
+                    int nearest = -1;
+
+                    for (int i = 0; i < objects.size(); i++) {
+                        double t = objects[i]->getIntersectingT(refractedRay);
+                        if (t > 0 && t < tMin) {
+                            tMin = t;
+                            nearest = i;
+                        }
+                    }
+
+                    if (nearest != -1) {
+                        Color refractedColor;
+                        double t = objects[nearest]->getRayTraced(refractedRay, level + 1, refractedColor);
+
+                        if (t > 0 && t < INT_MAX) {
+                            color.r += refractedColor.r * coEfficients[4];
+                            color.g += refractedColor.g * coEfficients[4];
+                            color.b += refractedColor.b * coEfficients[4];
+                        }
+                    }
+                }
+            }
+
 
             return t;
         }
@@ -564,9 +604,9 @@ class Sphere : public Object
 
         Sphere(Point center, double radius, Color color) : center(center), radius(radius), Object(color, NULL, 0) {}
 
-        Sphere(Point center, double radius, Color color, double coEfficients[4], double shine) : center(center), radius(radius), Object(color, coEfficients, shine) {}
+        Sphere(Point center, double radius, Color color, double coEfficients[5], double shine) : center(center), radius(radius), Object(color, coEfficients, shine) {}
 
-        Sphere(Point center, double radius, Color color, double coEfficients[4], double shine, bitmap_image texture) : center(center), radius(radius), Object(color, coEfficients, shine, texture) {}
+        Sphere(Point center, double radius, Color color, double coEfficients[5], double shine, bitmap_image texture) : center(center), radius(radius), Object(color, coEfficients, shine, texture) {}
 
         void draw() {
             glPushMatrix();
@@ -634,7 +674,7 @@ class Sphere : public Object
             cout << "Radius : " << radius << endl;
             cout << "Color : " << color << endl;
             cout << "Co-efficients : ";
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 5; i++) {
                 cout << coEfficients[i] << " ";
             }
             cout << endl;
@@ -646,7 +686,7 @@ class Sphere : public Object
             in >> sphere.center;
             in >> sphere.radius;
             in >> sphere.color;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 5; i++) {
                 in >> sphere.coEfficients[i];
             }
             in >> sphere.shine;
@@ -705,12 +745,13 @@ class Floor : public Object
             
         }
 
-        Floor(double tileWidth, double coEfficients[4]) {
+        Floor(double tileWidth, double coEfficients[5]) {
             this->tileWidth = tileWidth;
             this->coEfficients[0] = coEfficients[0];
             this->coEfficients[1] = coEfficients[1];
             this->coEfficients[2] = coEfficients[2];
             this->coEfficients[3] = coEfficients[3];
+            this->coEfficients[4] = coEfficients[4];
             isTexture = false;
 
             bitmap_image texture_b("texture_b.bmp");
@@ -844,7 +885,7 @@ class Floor : public Object
             cout << "Tile Width : " << tileWidth << endl;
             cout << "Color : " << color << endl;
             cout << "Co-efficients : ";
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 5; i++) {
                 cout << coEfficients[i] << " ";
             }
             cout << endl;
@@ -858,7 +899,7 @@ class Floor : public Object
         friend istream& operator>>(istream &input, Floor &floor) {
             input >> floor.tileWidth;
 
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 5; i++) {
                 if ( i == 2) {
                     continue;
                 }
@@ -903,9 +944,9 @@ class Triangle : public Object {
 
         Triangle(Point a, Point b, Point c, Color color) : a(a), b(b), c(c), Object(color, NULL, 0) {}
 
-        Triangle(Point a, Point b, Point c, Color color, double coEfficients[4], double shine) : a(a), b(b), c(c), Object(color, coEfficients, shine) {}
+        Triangle(Point a, Point b, Point c, Color color, double coEfficients[5], double shine) : a(a), b(b), c(c), Object(color, coEfficients, shine) {}
 
-        Triangle(Point a, Point b, Point c, Color color, double coEfficients[4], double shine, bitmap_image texture) : a(a), b(b), c(c), Object(color, coEfficients, shine, texture) {}
+        Triangle(Point a, Point b, Point c, Color color, double coEfficients[5], double shine, bitmap_image texture) : a(a), b(b), c(c), Object(color, coEfficients, shine, texture) {}
 
         void draw() {
             glColor3f(color.r, color.g, color.b);
